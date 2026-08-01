@@ -55,9 +55,9 @@ export function createInitialState() {
       name: 'New Gardener',
       creatorComplete: false,
       appearance: {
-        skinTone: '#c98f68',
-        hairStyle: 'wardrobe-hair-meadow-bob',
-        hairColor: '#62493d',
+        skinTone: '#d99b72',
+        hairStyle: 'meadow-bob',
+        hairColor: '#49352f',
       },
       position: { x: 0, y: 0, z: 4 },
     },

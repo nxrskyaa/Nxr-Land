@@ -364,7 +364,21 @@ button { font: inherit; }
 }
 
 @media (hover: none) and (pointer: coarse) and (min-width: 761px) {
-  .controls-enabled .mobile-controls { display: none; }
+  .controls-hint { display: none; }
+  .controls-enabled .mobile-controls {
+    position: absolute;
+    inset: auto 0 0;
+    z-index: 7;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 max(1.25rem, env(safe-area-inset-right)) max(1.25rem, env(safe-area-inset-bottom)) max(1.25rem, env(safe-area-inset-left));
+    pointer-events: none;
+  }
+  .controls-enabled .joystick,
+  .controls-enabled .action-button { pointer-events: auto; }
+  .controls-enabled .joystick { width: 6.5rem; height: 6.5rem; }
+  .controls-enabled .action-feedback { bottom: calc(7.8rem + env(safe-area-inset-bottom)); }
 }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }

@@ -39,6 +39,7 @@ export class Input {
     this.enabled = false;
     this.disposed = false;
     this.pointerId = null;
+    this.canvasGesture = null;
     this.#buildMobileControls();
     this.#bind();
   }
@@ -64,8 +65,28 @@ export class Input {
     this.#listen(view, 'blur', () => this.reset());
     this.#listen(doc, 'visibilitychange', () => { if (doc.hidden) this.reset(); });
     this.#listen(this.canvas, 'pointerdown', (event) => {
-      if (!this.enabled || event.pointerType === 'touch' || event.target !== this.canvas) return;
-      this.setTargetFromScreen(event.clientX, event.clientY);
+      if (!this.enabled || event.target !== this.canvas || event.isPrimary === false || event.button !== 0) return;
+      this.canvasGesture = {
+        pointerId: event.pointerId,
+        x: event.clientX,
+        y: event.clientY,
+        startedAt: event.timeStamp,
+      };
+      try { this.canvas.setPointerCapture?.(event.pointerId); } catch { /* Capture is optional. */ }
+    });
+    this.#listen(this.canvas, 'pointerup', (event) => {
+      const gesture = this.canvasGesture;
+      if (!gesture || event.pointerId !== gesture.pointerId) return;
+      const distance = Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y);
+      const duration = event.timeStamp - gesture.startedAt;
+      this.#releasePointer(this.canvas, gesture.pointerId);
+      this.canvasGesture = null;
+      if (this.enabled && distance <= 8 && duration <= 500) this.setTargetFromScreen(event.clientX, event.clientY);
+    });
+    this.#listen(this.canvas, 'pointercancel', (event) => {
+      if (event.pointerId !== this.canvasGesture?.pointerId) return;
+      this.#releasePointer(this.canvas, event.pointerId);
+      this.canvasGesture = null;
     });
   }
 
@@ -104,6 +125,7 @@ export class Input {
     this.#listen(this.joystick, 'pointermove', update);
     const cancel = (event) => {
       if (event.pointerId !== this.pointerId) return;
+      this.#releasePointer(this.joystick, event.pointerId);
       this.pointerId = null;
       this.mobileVector = { x: 0, z: 0 };
       this.knob.style.transform = '';
@@ -115,6 +137,17 @@ export class Input {
       event.preventDefault();
       this.triggerAction();
     });
+  }
+
+  #releasePointer(element, pointerId) {
+    if (pointerId === null || pointerId === undefined) return;
+    try {
+      if (!element?.hasPointerCapture || element.hasPointerCapture(pointerId)) {
+        element?.releasePointerCapture?.(pointerId);
+      }
+    } catch {
+      // Pointer capture may already have been released by the browser.
+    }
   }
 
   setEnabled(enabled) {
@@ -158,8 +191,12 @@ export class Input {
   }
 
   reset() {
+    this.#releasePointer(this.canvas, this.canvasGesture?.pointerId);
+    this.#releasePointer(this.joystick, this.pointerId);
     this.keys.clear();
     this.mobileVector = { x: 0, z: 0 };
+    this.target = null;
+    this.canvasGesture = null;
     this.pointerId = null;
     if (this.knob) this.knob.style.transform = '';
   }

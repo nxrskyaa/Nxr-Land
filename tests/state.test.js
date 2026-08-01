@@ -12,6 +12,7 @@ import { BUILDINGS, BUILDING_BY_ID } from '../src/data/buildings.js';
 import { QUESTS, QUEST_BY_ID } from '../src/data/quests.js';
 import { createInitialState } from '../src/game/createState.js';
 import { deepFreeze } from '../src/utils/deepFreeze.js';
+import { CHARACTER_OPTIONS, DEFAULT_APPEARANCE } from '../src/visuals/CharacterFactory.js';
 
 function expectUniqueIds(entries) {
   const ids = entries.map(({ id }) => id);
@@ -255,6 +256,15 @@ describe('game catalogs', () => {
 });
 
 describe('createInitialState', () => {
+  it('uses appearance defaults represented exactly by the creator catalogs', () => {
+    const appearance = createInitialState().player.appearance;
+    expect(appearance.skinTone).toBe(DEFAULT_APPEARANCE.skinTone);
+    expect(appearance.hairStyle).toBe(DEFAULT_APPEARANCE.hairStyle);
+    expect(appearance.hairColor).toBe(DEFAULT_APPEARANCE.hairColor);
+    expect(CHARACTER_OPTIONS.skinTones.map(({ value }) => value)).toContain(appearance.skinTone);
+    expect(CHARACTER_OPTIONS.hairColors.map(({ value }) => value)).toContain(appearance.hairColor);
+  });
+
   it('returns the complete schema-version-1 authoritative state', () => {
     const state = createInitialState();
 

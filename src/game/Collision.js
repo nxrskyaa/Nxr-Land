@@ -5,6 +5,10 @@ function finite(value, fallback = 0) {
   return Number.isFinite(value) ? value : fallback;
 }
 
+function clamp(value, minimum, maximum) {
+  return Math.min(maximum, Math.max(minimum, value));
+}
+
 function safeRadius(radius) {
   return Math.max(0, finite(radius));
 }
@@ -65,22 +69,55 @@ export function moveWithCollisions(position, movement, radius = 0.35, bounds = D
   return { ...result, collided };
 }
 
-export function validateSpawn(spawn, radius = 0.35, bounds = DEFAULT_BOUNDS, colliders = []) {
-  const requested = { x: finite(spawn?.x), z: finite(spawn?.z, 4) };
-  if (isPositionClear(requested, radius, bounds, colliders)) return requested;
-  for (let ring = 1; ring <= 24; ring += 1) {
-    const distance = ring * 0.5;
-    const samples = Math.max(8, ring * 6);
-    for (let index = 0; index < samples; index += 1) {
-      const angle = index / samples * Math.PI * 2;
-      const candidate = {
-        x: requested.x + Math.cos(angle) * distance,
-        z: requested.z + Math.sin(angle) * distance,
-      };
-      if (isPositionClear(candidate, radius, bounds, colliders)) return candidate;
+export function validateSpawn(position, radius = 0.35, bounds = DEFAULT_BOUNDS, colliders = []) {
+    const { minX, maxX, minZ, maxZ } = bounds ?? {};
+    if (![minX, maxX, minZ, maxZ].every(Number.isFinite)
+      || minX > maxX || minZ > maxZ) {
+      throw new TypeError('Spawn bounds must contain finite, ordered min/max values');
     }
+    if (!Number.isFinite(radius) || radius < 0) {
+      throw new TypeError('Spawn radius must be a finite, non-negative number');
+    }
+
+    const lowX = minX + radius;
+    const highX = maxX - radius;
+    const lowZ = minZ + radius;
+    const highZ = maxZ - radius;
+    if (lowX > highX || lowZ > highZ) {
+      throw new Error('No clear spawn point exists within bounds for the requested radius');
+    }
+
+    const requested = {
+      x: Number.isFinite(position?.x) ? position.x : (lowX + highX) / 2,
+      z: Number.isFinite(position?.z) ? position.z : (lowZ + highZ) / 2,
+    };
+    const origin = {
+      x: clamp(requested.x, lowX, highX),
+      z: clamp(requested.z, lowZ, highZ),
+    };
+    if (isPositionClear(origin, radius, bounds, colliders)) return origin;
+
+    const step = Math.max(0.25, Math.min(0.75, radius || 0.25));
+    const axis = (low, high) => {
+      if (low === high) return [low];
+      const values = [low];
+      for (let value = low + step; value < high; value += step) values.push(value);
+      values.push(high);
+      return values;
+    };
+    const candidates = [];
+    for (const x of axis(lowX, highX)) {
+      for (const z of axis(lowZ, highZ)) candidates.push({ x, z });
+    }
+    candidates.sort((left, right) => {
+      const leftDistance = (left.x - origin.x) ** 2 + (left.z - origin.z) ** 2;
+      const rightDistance = (right.x - origin.x) ** 2 + (right.z - origin.z) ** 2;
+      return leftDistance - rightDistance || left.x - right.x || left.z - right.z;
+    });
+
+    const clear = candidates.find((candidate) => isPositionClear(candidate, radius, bounds, colliders));
+    if (clear) return clear;
+    throw new Error('No clear spawn point exists within bounds for the requested radius');
   }
-  return { x: 0, z: 4 };
-}
 
 export { DEFAULT_BOUNDS as MAP_BOUNDS };

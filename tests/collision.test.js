@@ -31,9 +31,34 @@ describe('world collision', () => {
     expect(result.collided).toBe(true);
   });
 
-  it('returns the requested spawn or finds a nearby clear exit', () => {
+  it('returns the requested spawn or deterministically finds a clear point across the map', () => {
     expect(validateSpawn({ x: 0, z: 3 }, 0.35, bounds, colliders)).toEqual({ x: 0, z: 3 });
-    const recovered = validateSpawn({ x: 1, z: 0 }, 0.35, bounds, colliders);
-    expect(isPositionClear(recovered, 0.35, bounds, colliders)).toBe(true);
+    const first = validateSpawn({ x: 1, z: 0 }, 0.35, bounds, colliders);
+    const second = validateSpawn({ x: 1, z: 0 }, 0.35, bounds, colliders);
+    expect(first).toEqual(second);
+    expect(isPositionClear(first, 0.35, bounds, colliders)).toBe(true);
+  });
+
+  it('handles a tiny map when exactly one radius-safe point exists', () => {
+    const tinyBounds = { minX: -0.4, maxX: 0.4, minZ: -0.4, maxZ: 0.4 };
+    expect(validateSpawn({ x: 20, z: -20 }, 0.4, tinyBounds, [])).toEqual({ x: 0, z: 0 });
+  });
+
+  it('throws instead of silently returning a blocked or out-of-bounds fallback', () => {
+    const blocked = [{ type: 'rect', x: 0, z: 0, width: 20, depth: 20 }];
+    expect(() => validateSpawn({ x: 0, z: 0 }, 0.35, bounds, blocked))
+      .toThrow(/no clear spawn point/i);
+    expect(() => validateSpawn({ x: 0, z: 0 }, 0.41, {
+      minX: -0.4, maxX: 0.4, minZ: -0.4, maxZ: 0.4,
+    }, [])).toThrow(/no clear spawn point/i);
+  });
+
+  it.each([
+    [{ minX: Number.NaN, maxX: 1, minZ: -1, maxZ: 1 }, 0.2, 'bounds'],
+    [{ minX: 2, maxX: 1, minZ: -1, maxZ: 1 }, 0.2, 'bounds'],
+    [bounds, Number.NaN, 'radius'],
+    [bounds, -0.1, 'radius'],
+  ])('guards invalid finite bounds and radius', (testBounds, radius, message) => {
+    expect(() => validateSpawn({ x: 0, z: 0 }, radius, testBounds, [])).toThrow(message);
   });
 });

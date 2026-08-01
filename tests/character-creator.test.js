@@ -2,12 +2,36 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createInitialState } from '../src/game/createState.js';
 import { CharacterCreator, sanitizePlayerName } from '../src/ui/CharacterCreator.js';
+import { CHARACTER_OPTIONS, DEFAULT_APPEARANCE, normalizeAppearance } from '../src/visuals/CharacterFactory.js';
 
 describe('character creator name sanitation', () => {
   it('removes markup/control characters, collapses spaces, and limits length', () => {
     expect(sanitizePlayerName('  <b>Meadow\u0000   Friend</b>  ')).toBe('bMeadow Friendb');
     expect(sanitizePlayerName('A'.repeat(40))).toHaveLength(20);
     expect(sanitizePlayerName('   ')).toBe('New Gardener');
+  });
+});
+
+describe('character appearance options', () => {
+  it('uses catalog defaults for arbitrary and legacy invalid option values', () => {
+    expect(normalizeAppearance({
+      skinTone: '#abcdef',
+      hairStyle: 'wardrobe-hair-not-real',
+      hairColor: '#123456',
+      top: '#654321',
+      bottom: '#fedcba',
+    })).toEqual(DEFAULT_APPEARANCE);
+  });
+
+  it('accepts every catalog option and migrates the legacy default hair id', () => {
+    for (const [group, key] of Object.entries({
+      skinTones: 'skinTone', hairStyles: 'hairStyle', hairColors: 'hairColor', tops: 'top', bottoms: 'bottom',
+    })) {
+      for (const { value } of CHARACTER_OPTIONS[group]) {
+        expect(normalizeAppearance({ [key]: value })[key]).toBe(value);
+      }
+    }
+    expect(normalizeAppearance({ hairStyle: 'wardrobe-hair-meadow-bob' }).hairStyle).toBe('meadow-bob');
   });
 });
 
@@ -27,6 +51,22 @@ function createCreator(saveResult) {
 }
 
 describe('CharacterCreator confirmation', () => {
+  it('renders exactly one checked radio in every option group for invalid saved appearance', () => {
+    const { creator, state } = createCreator(true);
+    state.player.appearance = {
+      skinTone: '#ffffff', hairStyle: 'unknown', hairColor: '#000000', top: 'bad', bottom: null,
+    };
+    creator.dispose();
+    const replacement = new CharacterCreator({
+      container: document.querySelector('#app'), state, player: { updateAppearance: vi.fn() },
+    });
+
+    document.querySelectorAll('[role="radiogroup"]').forEach((group) => {
+      expect(group.querySelectorAll('[role="radio"][aria-checked="true"]')).toHaveLength(1);
+    });
+    replacement.dispose();
+  });
+
   it('keeps the creator open and does not emit completion when persistence fails', () => {
     const { creator, state, eventBus, onComplete } = createCreator(false);
     creator.nameInput.value = 'Mira';

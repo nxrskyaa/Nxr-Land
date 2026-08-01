@@ -44,9 +44,22 @@ export const DEFAULT_APPEARANCE = Object.freeze({
   accessory: 'leaf-pin',
 });
 
+const OPTION_KEYS = Object.freeze({
+  skinTone: 'skinTones',
+  hairStyle: 'hairStyles',
+  hairColor: 'hairColors',
+  top: 'tops',
+  bottom: 'bottoms',
+});
+
+function catalogValue(key, value) {
+  const options = CHARACTER_OPTIONS[OPTION_KEYS[key]];
+  return options.some((option) => option.value === value) ? value : DEFAULT_APPEARANCE[key];
+}
+
 function normalizeStyle(style = '') {
   const clean = String(style).replace('wardrobe-hair-', '');
-  return CHARACTER_OPTIONS.hairStyles.some(({ value }) => value === clean) ? clean : 'meadow-bob';
+  return catalogValue('hairStyle', clean);
 }
 
 function safeColor(value, fallback) {
@@ -55,11 +68,11 @@ function safeColor(value, fallback) {
 
 export function normalizeAppearance(appearance = {}) {
   return {
-    skinTone: safeColor(appearance.skinTone, DEFAULT_APPEARANCE.skinTone),
+    skinTone: catalogValue('skinTone', appearance.skinTone),
     hairStyle: normalizeStyle(appearance.hairStyle),
-    hairColor: safeColor(appearance.hairColor, DEFAULT_APPEARANCE.hairColor),
-    top: safeColor(appearance.top, DEFAULT_APPEARANCE.top),
-    bottom: safeColor(appearance.bottom, DEFAULT_APPEARANCE.bottom),
+    hairColor: catalogValue('hairColor', appearance.hairColor),
+    top: catalogValue('top', appearance.top),
+    bottom: catalogValue('bottom', appearance.bottom),
     shoes: safeColor(appearance.shoes, DEFAULT_APPEARANCE.shoes),
     accessory: appearance.accessory === 'none' ? 'none' : DEFAULT_APPEARANCE.accessory,
   };

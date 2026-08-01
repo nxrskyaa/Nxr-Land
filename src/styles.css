@@ -1,99 +1,79 @@
 :root {
-  color: #f7f1df;
-  background: #18261d;
-  font-family:
-    Inter, ui-rounded, "SF Pro Rounded", system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
+  color: #fff8e7;
+  background: #bfe3dd;
+  font-family: Inter, ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html,
-body,
-#app {
-  min-width: 320px;
-  min-height: 100%;
-  margin: 0;
-}
-
-body {
-  min-height: 100vh;
-  min-height: 100dvh;
-  background:
-    radial-gradient(circle at 50% 35%, rgb(130 170 104 / 20%), transparent 34rem),
-    linear-gradient(160deg, #213527 0%, #101a14 100%);
-}
+* { box-sizing: border-box; }
+html, body, #app { width: 100%; min-width: 320px; min-height: 100%; margin: 0; }
+body { min-height: 100vh; min-height: 100dvh; overflow: hidden; background: #bfe3dd; }
+button { font: inherit; }
 
 .app-shell {
-  display: grid;
-  min-height: 100vh;
-  min-height: 100dvh;
-  place-items: center;
-  padding: 2rem;
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 50% 40%, #e9f5d4 0%, #bfe3dd 48%, #9fcac5 100%);
 }
+
+.game-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  filter: saturate(1.04);
+  transition: opacity 900ms ease;
+}
+.is-ready .game-canvas { opacity: 1; }
 
 .loading-shell {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
   display: grid;
+  align-content: center;
   justify-items: center;
   text-align: center;
+  pointer-events: none;
+  background: radial-gradient(circle, #b4d591, #638f72);
+  transition: opacity 700ms ease 150ms, visibility 0s linear 900ms;
 }
+.is-ready .loading-shell { visibility: hidden; opacity: 0; }
+.eyebrow { margin: 0 0 .55rem; color: #ffe19a; font-size: .72rem; font-weight: 800; letter-spacing: .24em; text-transform: uppercase; }
+.loading-shell h1 { margin: 0; color: #fff9e9; font-family: Georgia, serif; font-size: clamp(3.6rem, 12vw, 7rem); font-weight: 500; letter-spacing: -.07em; line-height: .9; text-shadow: 0 7px 30px rgb(49 79 58 / 30%); }
+.loading-status { margin: 1.2rem 0; color: #eef3df; font-size: .95rem; }
+.loading-indicator { width: 3rem; height: .32rem; overflow: hidden; border-radius: 99px; background: rgb(33 67 49 / 25%); }
+.loading-indicator::after { display: block; width: 45%; height: 100%; border-radius: inherit; background: #ffe08b; content: ""; animation: load 1.2s ease-in-out infinite alternate; }
 
-.eyebrow {
-  margin: 0 0 0.5rem;
-  color: #cddfae;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-}
+.scenic-overlay { position: absolute; inset: 0; z-index: 3; padding: clamp(1rem, 3vw, 2.2rem); pointer-events: none; opacity: 0; transition: opacity 700ms ease 550ms; }
+.is-ready .scenic-overlay { opacity: 1; }
+.village-brand, .day-pill { position: absolute; display: flex; align-items: center; gap: .75rem; padding: .72rem .9rem; border: 1px solid rgb(255 255 255 / 55%); border-radius: 1.15rem; color: #475b4e; background: rgb(255 250 232 / 78%); box-shadow: 0 10px 35px rgb(58 87 68 / 15%); backdrop-filter: blur(14px); }
+.village-brand { top: clamp(1rem, 3vw, 2.2rem); left: clamp(1rem, 3vw, 2.2rem); }
+.brand-mark { display: grid; width: 2.35rem; height: 2.35rem; place-items: center; border-radius: .8rem; color: #fff9e8; background: #de7f6d; font-family: Georgia, serif; font-size: 1.35rem; box-shadow: inset 0 -4px 0 rgb(94 57 61 / 12%); }
+.village-brand div, .day-pill div { display: grid; line-height: 1.1; }
+.village-brand b { color: #45584d; font-family: Georgia, serif; font-size: 1.2rem; letter-spacing: -.02em; }
+.village-brand small, .day-pill small { margin-top: .2rem; color: #7f8d7c; font-size: .62rem; letter-spacing: .04em; }
+.day-pill { top: clamp(1rem, 3vw, 2.2rem); right: clamp(1rem, 3vw, 2.2rem); }
+.day-pill > span { font-size: 1.45rem; filter: drop-shadow(0 3px 5px rgb(207 153 71 / 25%)); }
+.day-pill b { margin-top: .16rem; color: #687862; font-size: .72rem; }
+.explore-note { position: absolute; bottom: 1rem; left: 50%; margin: 0; padding: .48rem .8rem; transform: translateX(-50%); border-radius: 99px; color: rgb(67 85 72 / 78%); background: rgb(255 250 232 / 65%); font-size: .62rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; backdrop-filter: blur(8px); }
 
-.loading-shell h1 {
-  margin: 0;
-  color: #fff8e7;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(3rem, 12vw, 6rem);
-  font-weight: 500;
-  letter-spacing: -0.06em;
-  line-height: 0.95;
-}
+.has-fatal-error { display: grid; place-items: center; padding: 1.5rem; background: radial-gradient(circle at 50% 30%, #d9eac2, #8cb3a3); }
+.fatal-panel { z-index: 8; width: min(34rem, 100%); padding: clamp(2rem, 7vw, 4rem); border: 1px solid rgb(255 255 255 / 58%); border-radius: 2.2rem; color: #4d5e51; text-align: center; background: rgb(255 249 229 / 86%); box-shadow: 0 2rem 5rem rgb(51 82 64 / 20%); backdrop-filter: blur(14px); }
+.fatal-icon { display: block; margin-bottom: .7rem; color: #80a492; font-size: 3.2rem; }
+.fatal-panel h1 { margin: .2rem auto 1rem; color: #4b594e; font-family: Georgia, serif; font-size: clamp(2rem, 7vw, 3rem); font-weight: 500; line-height: 1; letter-spacing: -.04em; }
+.fatal-panel p:not(.eyebrow) { max-width: 27rem; margin: 0 auto 1.5rem; color: #748076; line-height: 1.6; }
+.fatal-panel button { padding: .78rem 1.15rem; border: 0; border-radius: 99px; color: white; background: #d77d68; box-shadow: 0 7px 18px rgb(138 80 67 / 25%); cursor: pointer; }
 
-.loading-status {
-  margin: 1rem 0;
-  color: #d8d5c5;
-  font-size: 0.95rem;
-}
-
-.loading-indicator {
-  width: 2rem;
-  height: 0.25rem;
-  overflow: hidden;
-  border-radius: 999px;
-  background: #405947;
-}
-
-.loading-indicator::after {
-  display: block;
-  width: 45%;
-  height: 100%;
-  border-radius: inherit;
-  background: #f1c979;
-  content: "";
-  animation: load 1.2s ease-in-out infinite alternate;
-}
-
-@keyframes load {
-  to {
-    transform: translateX(125%);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .loading-indicator::after {
-    animation: none;
-    transform: translateX(60%);
-  }
-}
+@keyframes load { to { transform: translateX(125%); } }
+@media (max-width: 620px) { .village-brand small, .explore-note { display: none; } .village-brand, .day-pill { padding: .55rem .65rem; } .brand-mark { width: 2rem; height: 2rem; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }

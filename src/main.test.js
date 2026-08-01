@@ -24,4 +24,31 @@ describe('app initialization', () => {
     expect(loadingStatus.textContent).toBe('Your village is ready.');
     expect(app.dataset.threeRevision).toBe(REVISION);
   });
+
+  it('starts an injected game with loaded state and app dependencies', () => {
+    let options;
+    class FakeGame {
+      constructor(value) { options = value; }
+      start() { this.started = true; }
+    }
+    const storage = { getItem: () => null, setItem() {}, removeItem() {} };
+
+    const game = initializeApp(document, { GameClass: FakeGame, storage, forceGame: true });
+
+    expect(game.started).toBe(true);
+    expect(options.container).toBe(document.querySelector('#app'));
+    expect(options.state.schemaVersion).toBe(1);
+    expect(options.eventBus).toBeDefined();
+    expect(options.saveManager.storage).toBe(storage);
+  });
+
+  it('shows an attractive fatal fallback when WebGL initialization fails', () => {
+    class BrokenGame { constructor() { throw new Error('no webgl'); } }
+
+    initializeApp(document, { GameClass: BrokenGame, forceGame: true });
+
+    expect(document.querySelector('.fatal-panel')).not.toBeNull();
+    expect(document.querySelector('.fatal-panel').textContent).toContain('village needs a little more sunlight');
+    expect(document.querySelector('#app').getAttribute('aria-busy')).toBe('false');
+  });
 });

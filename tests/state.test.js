@@ -137,8 +137,8 @@ describe('game catalogs', () => {
     expectDeepFrozen(ITEMS);
   });
 
-  it('defines exactly eight immutable and distinct pets', () => {
-    expect(PETS).toHaveLength(8);
+  it('defines a roster of immutable and distinct pets', () => {
+    expect(PETS.length).toBeGreaterThanOrEqual(12);
     expectUniqueIds(PETS);
 
     for (const pet of PETS) {
@@ -156,12 +156,12 @@ describe('game catalogs', () => {
       expectNonEmptyValues(pet.palette);
     }
 
-    expect(new Set(PETS.map(({ name }) => name)).size).toBe(8);
+    expect(new Set(PETS.map(({ name }) => name)).size).toBe(PETS.length);
     expectDeepFrozen(PETS);
   });
 
-  it('defines twenty immutable wardrobe pieces across every appearance slot', () => {
-    expect(WARDROBE).toHaveLength(20);
+  it('defines a large immutable wardrobe across every appearance slot', () => {
+    expect(WARDROBE.length).toBeGreaterThanOrEqual(100);
     expectUniqueIds(WARDROBE);
     expect(new Set(WARDROBE.map(({ slot }) => slot))).toEqual(
       new Set(['hair', 'top', 'bottom', 'shoes', 'accessory']),

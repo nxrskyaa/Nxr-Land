@@ -57,6 +57,62 @@ export const PETS = deepFreeze([
     accessory: { type: 'constellation', color: '#ffe79b' },
     bonus: { type: 'rare-reward', amount: 0.04 },
   },
+  {
+    id: 'pet-clovercalf', name: 'Clovercalf', rarity: 'common',
+    palette: { primary: '#a7c76f', secondary: '#e6f0c2', accent: '#7a9b52' },
+    shape: { body: 'stout', ears: 'stub', tail: 'tuft' },
+    accessory: { type: 'clover', color: '#6fae5c' },
+    bonus: { type: 'growth-speed', amount: 0.02 },
+  },
+  {
+    id: 'pet-sandsnail', name: 'Sandsnail', rarity: 'common',
+    palette: { primary: '#d8c193', secondary: '#f0e4c4', accent: '#b39a6a' },
+    shape: { body: 'shell', ears: 'none', tail: 'coil' },
+    accessory: { type: 'leaf-hat', color: '#8fae6a' },
+    bonus: { type: 'sell-price', amount: 0.01 },
+  },
+  {
+    id: 'pet-puddleduck', name: 'Puddleduck', rarity: 'common',
+    palette: { primary: '#f0d98a', secondary: '#fbeec2', accent: '#d8a24f' },
+    shape: { body: 'round', ears: 'bill', tail: 'fan' },
+    accessory: { type: 'ripple', color: '#9bc7d0' },
+    bonus: { type: 'watering-radius', amount: 0.02 },
+  },
+  {
+    id: 'pet-mistkit', name: 'Mistkit', rarity: 'rare',
+    palette: { primary: '#c9d4e0', secondary: '#eef3f8', accent: '#8fa0b5' },
+    shape: { body: 'slender', ears: 'tall', tail: 'plume' },
+    accessory: { type: 'mist-bell', color: '#dfeaf2' },
+    bonus: { type: 'movement-speed', amount: 0.03 },
+  },
+  {
+    id: 'pet-glimmerfawn', name: 'Glimmerfawn', rarity: 'rare',
+    palette: { primary: '#d8b384', secondary: '#f5e6c9', accent: '#a9784f' },
+    shape: { body: 'slender', ears: 'antlers', tail: 'short' },
+    accessory: { type: 'glow-antler', color: '#ffe79b' },
+    bonus: { type: 'harvest-coin', amount: 0.03 },
+  },
+  {
+    id: 'pet-thistlehog', name: 'Thistlehog', rarity: 'rare',
+    palette: { primary: '#9b7a5f', secondary: '#e0cba6', accent: '#6f5a45' },
+    shape: { body: 'round', ears: 'spines', tail: 'stub' },
+    accessory: { type: 'berry', color: '#c45f65' },
+    bonus: { type: 'clear-speed', amount: 0.03 },
+  },
+  {
+    id: 'pet-auroralynx', name: 'Auroralynx', rarity: 'epic',
+    palette: { primary: '#7fb9c7', secondary: '#dff2f4', accent: '#8a79bd' },
+    shape: { body: 'slender', ears: 'tufted', tail: 'plume' },
+    accessory: { type: 'aurora-veil', color: '#cfe4ef' },
+    bonus: { type: 'rare-reward', amount: 0.05 },
+  },
+  {
+    id: 'pet-solunemoth', name: 'Solunemoth', rarity: 'epic',
+    palette: { primary: '#e7c27a', secondary: '#f8e9c2', accent: '#a78dd1' },
+    shape: { body: 'tiny', ears: 'antennae', tail: 'none' },
+    accessory: { type: 'sun-wings', color: '#fff0a8' },
+    bonus: { type: 'night-visibility', amount: 0.06 },
+  },
 ]);
 
 export const PET_BY_ID = deepFreeze(Object.fromEntries(PETS.map((pet) => [pet.id, pet])));

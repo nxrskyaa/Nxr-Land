@@ -135,6 +135,122 @@ describe('SaveManager', () => {
     expect(storage.getItem(BACKUP_SAVE_KEY)).toBe(originalBackup);
   });
 
+  it.each([
+    ['player name', (state) => { state.player.name = ''; }],
+    ['player appearance shape', (state) => { state.player.appearance = []; }],
+    ['player skin tone', (state) => { state.player.appearance.skinTone = ''; }],
+    ['player hair style', (state) => { state.player.appearance.hairStyle = 4; }],
+    ['player hair color', (state) => { state.player.appearance.hairColor = ''; }],
+    ['placed building shape', (state) => { state.world.placedBuildings = [null]; }],
+    ['placed building identity', (state) => { state.world.placedBuildings = [{ x: 1, z: 2 }]; }],
+    ['placed building x', (state) => { state.world.placedBuildings = [{ id: 'shed', x: NaN, z: 2 }]; }],
+    ['placed building z', (state) => { state.world.placedBuildings = [{ buildingId: 'shed', x: 1, z: Infinity }]; }],
+    ['placed building rotation', (state) => { state.world.placedBuildings = [{ id: 'shed', x: 1, z: 2, rotation: 'north' }]; }],
+    ['house upgrade level', (state) => { state.world.upgrades.houseLevel = 0; }],
+    ['empty pet id', (state) => { state.collection.pets = ['']; }],
+    ['empty wardrobe id', (state) => { state.collection.wardrobe = ['']; }],
+    ['equipped pet id', (state) => { state.collection.equipped.petId = 3; }],
+    ['equipped wardrobe shape', (state) => { state.collection.equipped.wardrobe = []; }],
+    ['missing equipped wardrobe slot', (state) => { delete state.collection.equipped.wardrobe.hair; }],
+    ['equipped wardrobe slot value', (state) => { state.collection.equipped.wardrobe.top = ''; }],
+    ['quest chapter', (state) => { state.quests.chapter = 1.5; }],
+    ['quest progress value', (state) => { state.quests.progress.intro = Infinity; }],
+    ['daily reward streak', (state) => { state.rewards.daily.streak = 1.5; }],
+    ['daily claimed day', (state) => { state.rewards.daily.claimedDays = [true]; }],
+    ['daily reward day', (state) => { state.rewards.daily.track[0].day = 0; }],
+    ['daily reward shape', (state) => { state.rewards.daily.track[0].reward = []; }],
+    ['unknown reward field', (state) => { state.rewards.daily.track[0].reward.xp = 10; }],
+    ['negative reward coin', (state) => { state.rewards.daily.track[0].reward.coin = -1; }],
+    ['fractional reward item quantity', (state) => { state.rewards.daily.track[0].reward.items = { seed: 0.5 }; }],
+    ['playtime milestone minutes', (state) => { state.rewards.playtime.milestones[0].minutes = 0; }],
+    ['playtime milestone claimed flag', (state) => { state.rewards.playtime.milestones[0].claimed = 1; }],
+    ['pet pity count', (state) => { state.gacha.pity.pet = 0.5; }],
+    ['wardrobe pity count', (state) => { state.gacha.pity.wardrobe = -1; }],
+    ['audio master volume', (state) => { state.settings.audio.master = 1.01; }],
+    ['audio music volume', (state) => { state.settings.audio.music = -0.01; }],
+    ['audio effects volume', (state) => { state.settings.audio.effects = NaN; }],
+    ['graphics shadows', (state) => { state.settings.graphics.shadows = 'yes'; }],
+    ['graphics quality', (state) => { state.settings.graphics.quality = 2; }],
+    ['touch controls', (state) => { state.settings.controls.touch = null; }],
+    ['reduced motion', (state) => { state.settings.controls.reducedMotion = 0; }],
+    ['empty inventory id', (state) => { state.economy.inventory[''] = 1; }],
+  ])('rejects malformed authoritative %s fields without touching storage', (_name, mutate) => {
+    const originalPrimary = JSON.stringify(createInitialState());
+    const originalBackup = 'preserved-backup';
+    const storage = createStorage({
+      [PRIMARY_SAVE_KEY]: originalPrimary,
+      [BACKUP_SAVE_KEY]: originalBackup,
+    });
+    const state = createInitialState();
+    mutate(state);
+
+    const manager = createManager(storage);
+    expect(manager.save(state)).toBe(false);
+    expect(manager.lastStatus).toBe('invalid');
+    expect(storage.getItem(PRIMARY_SAVE_KEY)).toBe(originalPrimary);
+    expect(storage.getItem(BACKUP_SAVE_KEY)).toBe(originalBackup);
+  });
+
+  it('accepts the valid baseline, building identity variants, claimed-day forms, and safe future fields', () => {
+    const storage = createStorage();
+    const manager = createManager(storage);
+    const state = createInitialState();
+    state.world.placedBuildings = [
+      { id: 'shed-instance', x: 1, z: 2 },
+      { buildingId: 'barn', x: -3, z: 4, rotation: 1.5 },
+    ];
+    state.rewards.daily.claimedDays = [1, '2026-08-01'];
+    state.player.futureField = { enabled: true };
+
+    expect(manager.save(state)).toBe(true);
+    expect(manager.load()).toEqual(state);
+  });
+
+  it.each([
+    ['enumerable toJSON', (state) => { state.player.toJSON = () => null; }],
+    ['non-enumerable toJSON', (state) => {
+      Object.defineProperty(state.player, 'toJSON', { value: () => null });
+    }],
+    ['nested non-enumerable field', (state) => {
+      Object.defineProperty(state.player, 'hidden', { value: 'lost' });
+    }],
+    ['negative zero', (state) => { state.player.position.x = -0; }],
+  ])('rejects lossy serialization from %s without touching storage', (_name, mutate) => {
+    const originalPrimary = JSON.stringify(createInitialState());
+    const originalBackup = 'preserved-backup';
+    const storage = createStorage({
+      [PRIMARY_SAVE_KEY]: originalPrimary,
+      [BACKUP_SAVE_KEY]: originalBackup,
+    });
+    const state = createInitialState();
+    mutate(state);
+
+    const manager = createManager(storage);
+    expect(manager.save(state)).toBe(false);
+    expect(storage.getItem(PRIMARY_SAVE_KEY)).toBe(originalPrimary);
+    expect(storage.getItem(BACKUP_SAVE_KEY)).toBe(originalBackup);
+  });
+
+  it('contains throwing accessors as save errors without reading or changing storage', () => {
+    const originalPrimary = JSON.stringify(createInitialState());
+    const originalBackup = 'preserved-backup';
+    const storage = createStorage({
+      [PRIMARY_SAVE_KEY]: originalPrimary,
+      [BACKUP_SAVE_KEY]: originalBackup,
+    });
+    const state = createInitialState();
+    Object.defineProperty(state.player, 'name', {
+      enumerable: true,
+      get() { throw new Error('hostile getter'); },
+    });
+
+    const manager = createManager(storage);
+    expect(() => manager.save(state)).not.toThrow();
+    expect(manager.lastStatus).toBe('error');
+    expect(storage.getItem(PRIMARY_SAVE_KEY)).toBe(originalPrimary);
+    expect(storage.getItem(BACKUP_SAVE_KEY)).toBe(originalBackup);
+  });
+
   it('rejects dangerous object keys during save and migration without prototype mutation', () => {
     const storage = createStorage();
     const manager = createManager(storage);

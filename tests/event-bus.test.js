@@ -14,6 +14,28 @@ describe('EventBus', () => {
     expect(calls).toEqual(['first:turnip', 'second:turnip']);
   });
 
+  it('treats duplicate listener registrations as independent subscriptions', () => {
+    const bus = new EventBus();
+    const calls = [];
+    const listener = () => calls.push('duplicate');
+    const unsubscribeFirst = bus.on('tick', listener);
+    bus.on('tick', () => calls.push('middle'));
+    const unsubscribeSecond = bus.on('tick', listener);
+
+    bus.emit('tick');
+    expect(calls).toEqual(['duplicate', 'middle', 'duplicate']);
+
+    calls.length = 0;
+    unsubscribeFirst();
+    bus.emit('tick');
+    expect(calls).toEqual(['middle', 'duplicate']);
+
+    calls.length = 0;
+    unsubscribeSecond();
+    bus.emit('tick');
+    expect(calls).toEqual(['middle']);
+  });
+
   it('returns a safe idempotent unsubscribe function', () => {
     const bus = new EventBus();
     const listener = vi.fn();

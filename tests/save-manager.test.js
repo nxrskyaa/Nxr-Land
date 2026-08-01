@@ -21,6 +21,11 @@ function createManager(storage) {
 }
 
 describe('SaveManager', () => {
+  it('exports the exact stable storage key strings', () => {
+    expect(PRIMARY_SAVE_KEY).toBe('nxr-land-save-v1');
+    expect(BACKUP_SAVE_KEY).toBe('nxr-land-save-v1-backup');
+  });
+
   it('saves schema-version-1 state through an injected storage adapter', () => {
     const storage = createStorage();
     const manager = createManager(storage);
@@ -45,6 +50,23 @@ describe('SaveManager', () => {
     expect(manager.save(unsafe)).toBe(false);
     expect(manager.save({ ...createInitialState(), schemaVersion: 2 })).toBe(false);
     expect(storage.getItem(PRIMARY_SAVE_KEY)).toBe(original);
+  });
+
+  it('rejects sparse crop plots as lossy JSON without changing storage', () => {
+    const originalPrimary = JSON.stringify(createInitialState());
+    const originalBackup = JSON.stringify({ ...createInitialState(), schemaVersion: 1 });
+    const storage = createStorage({
+      [PRIMARY_SAVE_KEY]: originalPrimary,
+      [BACKUP_SAVE_KEY]: originalBackup,
+    });
+    const manager = createManager(storage);
+    const sparse = createInitialState();
+    sparse.crops.plots = Array(2);
+
+    expect(manager.save(sparse)).toBe(false);
+    expect(manager.lastStatus).toBe('invalid');
+    expect(storage.getItem(PRIMARY_SAVE_KEY)).toBe(originalPrimary);
+    expect(storage.getItem(BACKUP_SAVE_KEY)).toBe(originalBackup);
   });
 
   it('copies the exact prior valid primary to backup before replacement', () => {

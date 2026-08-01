@@ -28,9 +28,18 @@ function isJsonSafe(value, ancestors = new Set()) {
   if (ancestors.has(value)) return false;
 
   ancestors.add(value);
-  const safe = Array.isArray(value)
-    ? value.every((entry) => isJsonSafe(entry, ancestors))
-    : Object.values(value).every((entry) => isJsonSafe(entry, ancestors));
+  let safe;
+  if (Array.isArray(value)) {
+    safe = true;
+    for (let index = 0; index < value.length; index += 1) {
+      if (!Object.hasOwn(value, index) || !isJsonSafe(value[index], ancestors)) {
+        safe = false;
+        break;
+      }
+    }
+  } else {
+    safe = Object.values(value).every((entry) => isJsonSafe(entry, ancestors));
+  }
   ancestors.delete(value);
   return safe;
 }

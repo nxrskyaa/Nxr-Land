@@ -3,11 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "vitest --passWithNoTests",
-    "check": "node --check src/main.js"
+    "test": "vitest",
+    "check": "find src -type f -name '*.js' -exec node --check {} \\; && find . -maxdepth 1 -type f -name '*.config.js' -exec node --check {} \\;"
   },
   "dependencies": {
     "three": "^0.185.1"

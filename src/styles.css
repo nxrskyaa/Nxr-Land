@@ -22,7 +22,7 @@ body,
 
 body {
   min-height: 100vh;
-  overflow: hidden;
+  min-height: 100dvh;
   background:
     radial-gradient(circle at 50% 35%, rgb(130 170 104 / 20%), transparent 34rem),
     linear-gradient(160deg, #213527 0%, #101a14 100%);
@@ -31,6 +31,7 @@ body {
 .app-shell {
   display: grid;
   min-height: 100vh;
+  min-height: 100dvh;
   place-items: center;
   padding: 2rem;
 }
@@ -50,7 +51,7 @@ body {
   text-transform: uppercase;
 }
 
-h1 {
+.loading-shell h1 {
   margin: 0;
   color: #fff8e7;
   font-family: Georgia, "Times New Roman", serif;

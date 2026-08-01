@@ -2,6 +2,10 @@ export class EventBus {
   #listeners = new Map();
 
   on(type, listener) {
+    if (typeof listener !== 'function') {
+      throw new TypeError('EventBus listener must be a function');
+    }
+
     let listeners = this.#listeners.get(type);
     if (!listeners) {
       listeners = [];

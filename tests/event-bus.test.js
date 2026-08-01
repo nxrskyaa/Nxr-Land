@@ -2,6 +2,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { EventBus } from '../src/game/EventBus.js';
 
 describe('EventBus', () => {
+  it.each([undefined, null, {}, 'listener'])('rejects non-function listeners: %j', (listener) => {
+    const bus = new EventBus();
+
+    expect(() => bus.on('tick', listener)).toThrow(TypeError);
+  });
+
   it('emits synchronously in subscription order', () => {
     const bus = new EventBus();
     const calls = [];
@@ -68,6 +74,30 @@ describe('EventBus', () => {
     calls.length = 0;
     bus.emit('tick');
     expect(calls).toEqual(['first', 'third']);
+  });
+
+  it('supports reentrant emission with an independent listener snapshot', () => {
+    const bus = new EventBus();
+    const calls = [];
+    let nested = false;
+
+    bus.on('tick', (payload) => {
+      calls.push(`first:${payload}`);
+      if (!nested) {
+        nested = true;
+        bus.emit('tick', 'nested');
+      }
+    });
+    bus.on('tick', (payload) => calls.push(`second:${payload}`));
+
+    bus.emit('tick', 'outer');
+
+    expect(calls).toEqual([
+      'first:outer',
+      'first:nested',
+      'second:nested',
+      'second:outer',
+    ]);
   });
 
   it('propagates listener errors and stops the current dispatch', () => {

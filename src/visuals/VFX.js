@@ -8,6 +8,7 @@ export class VFX {
     this.butterflies = new THREE.Group();
     this.fireflies = new THREE.Group();
     this.waterMeshes = [];
+    this.waterMaterials = new Map();
     this.#createClouds();
     this.#createButterflies();
     this.#createFireflies();
@@ -62,6 +63,12 @@ export class VFX {
 
   registerWater(mesh) {
     this.waterMeshes.push(mesh);
+    if (!this.waterMaterials.has(mesh.material)) {
+      this.waterMaterials.set(mesh.material, {
+        baseOpacity: mesh.material.opacity,
+        phase: this.waterMaterials.size,
+      });
+    }
   }
 
   update(delta, elapsed) {
@@ -83,15 +90,22 @@ export class VFX {
     });
     this.waterMeshes.forEach((water, index) => {
       water.position.y = water.userData.baseY + Math.sin(elapsed * 1.25 + index) * 0.035;
-      water.material.opacity = 0.8 + Math.sin(elapsed * 0.9 + index) * 0.06;
+    });
+    this.waterMaterials.forEach(({ baseOpacity, phase }, material) => {
+      material.opacity = baseOpacity + Math.sin(elapsed * 0.9 + phase) * 0.045;
     });
   }
 
   dispose() {
+    const geometries = new Set();
     [this.clouds, this.butterflies, this.fireflies].forEach((group) => {
-      group.traverse((object) => object.geometry?.dispose());
+      group.traverse((object) => {
+        if (object.geometry) geometries.add(object.geometry);
+      });
       group.removeFromParent();
     });
+    geometries.forEach((geometry) => geometry.dispose());
     this.waterMeshes.length = 0;
+    this.waterMaterials.clear();
   }
 }

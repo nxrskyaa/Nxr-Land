@@ -34,8 +34,9 @@ function createLabel(text, accent = '#ef8f75') {
   context.fillText(text, 256, 61);
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
-  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false }));
-  sprite.scale.set(3.8, 0.95, 1);
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: true, depthWrite: false }));
+  sprite.scale.set(4.6, 1.15, 1);
+  sprite.userData.baseScale = sprite.scale.clone();
   sprite.userData.ownedTexture = texture;
   return sprite;
 }
@@ -44,6 +45,7 @@ export class World {
   constructor(scene, { state } = {}) {
     this.scene = scene;
     this.state = state;
+    this.disposed = false;
     this.landmarks = new Map();
     this.materials = createMaterialLibrary();
     this.nature = new NatureFactory(this.materials);
@@ -239,13 +241,29 @@ export class World {
     this.vfx.update(delta, elapsed);
   }
 
-  dispose() {
-    this.vfx.dispose();
+  setLabelScale(multiplier = 1) {
     this.root.traverse((object) => {
-      object.geometry?.dispose();
-      if (object.userData.ownedTexture) object.userData.ownedTexture.dispose();
-      if (object.material?.map && object.isSprite) object.material.dispose();
+      if (object.isSprite && object.userData.baseScale) {
+        object.scale.copy(object.userData.baseScale).multiplyScalar(multiplier);
+      }
     });
+  }
+
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.vfx.dispose();
+    const geometries = new Set();
+    const textures = new Set();
+    const spriteMaterials = new Set();
+    this.root.traverse((object) => {
+      if (object.geometry) geometries.add(object.geometry);
+      if (object.userData.ownedTexture) textures.add(object.userData.ownedTexture);
+      if (object.material?.map && object.isSprite) spriteMaterials.add(object.material);
+    });
+    geometries.forEach((geometry) => geometry.dispose());
+    textures.forEach((texture) => texture.dispose());
+    spriteMaterials.forEach((material) => material.dispose());
     this.nature.dispose();
     this.materials.dispose();
     this.root.removeFromParent();

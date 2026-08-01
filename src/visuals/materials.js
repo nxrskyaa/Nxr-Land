@@ -29,6 +29,7 @@ export const PALETTE = Object.freeze({
 
 export function createMaterialLibrary() {
   const cache = new Map();
+  let disposed = false;
   const standard = (name, color, options = {}) => {
     const material = new THREE.MeshStandardMaterial({
       color,
@@ -73,14 +74,18 @@ export function createMaterialLibrary() {
   return {
     ...materials,
     get(name) { return cache.get(name); },
-    dispose() { cache.forEach((material) => material.dispose()); },
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      cache.forEach((material) => material.dispose());
+    },
   };
 }
 
-export function setSoftShadows(object) {
+export function setSoftShadows(object, castShadow = true) {
   object.traverse((child) => {
     if (child.isMesh) {
-      child.castShadow = true;
+      child.castShadow = castShadow;
       child.receiveShadow = true;
     }
   });

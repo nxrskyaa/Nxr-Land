@@ -9,7 +9,11 @@ export function showFatalFallback(app, error) {
   if (!app) return;
   app.setAttribute('aria-busy', 'false');
   app.classList.add('has-fatal-error');
+  app.classList.remove('is-ready');
   app.querySelector('.loading-shell')?.remove();
+  app.querySelector('.scenic-overlay')?.remove();
+  app.querySelectorAll('.game-canvas').forEach((canvas) => canvas.remove());
+  if (app.querySelector('.fatal-panel')) return;
   const panel = app.ownerDocument.createElement('section');
   panel.className = 'fatal-panel';
   panel.setAttribute('role', 'alert');
@@ -33,8 +37,37 @@ function addScenicOverlay(app) {
     <header class="village-brand"><span class="brand-mark">N</span><div><b>Nxr Land</b><small>A tiny world, growing softly</small></div></header>
     <div class="day-pill"><span aria-hidden="true">☀</span><div><small>Meadow Day</small><b>Morning glow</b></div></div>
     <p class="explore-note">A peaceful village is taking root</p>
+    <section id="landmark-description" class="visually-hidden">
+      <h2>Village landmarks</h2>
+      <ul><li>Town Plaza</li><li>Home Plot</li><li>Market Lane</li><li>River Garden</li><li>Mosswood Gate</li><li>Sunmeadow Gate</li><li>Heartroot</li></ul>
+    </section>
   `;
   app.append(overlay);
+}
+
+export function installPageLifecycle(game, view) {
+  if (!game || !view?.addEventListener) return () => {};
+  let active = true;
+  const onPageHide = (event) => {
+    if (event.persisted) {
+      game.stop?.();
+      return;
+    }
+    cleanup();
+    game.dispose?.();
+  };
+  const onPageShow = (event) => {
+    if (event.persisted) game.start?.();
+  };
+  const cleanup = () => {
+    if (!active) return;
+    active = false;
+    view.removeEventListener('pagehide', onPageHide);
+    view.removeEventListener('pageshow', onPageShow);
+  };
+  view.addEventListener('pagehide', onPageHide);
+  view.addEventListener('pageshow', onPageShow);
+  return cleanup;
 }
 
 export function initializeApp(root = document, options = {}) {
@@ -51,26 +84,40 @@ export function initializeApp(root = document, options = {}) {
 
   const GameClass = options.GameClass ?? Game;
   const storage = options.storage ?? root.defaultView?.localStorage ?? globalThis.localStorage;
+  let game = null;
+  let cleanupLifecycle = () => {};
+  let fatalScheduled = false;
+  const handleFatal = (error) => {
+    if (fatalScheduled) return;
+    fatalScheduled = true;
+    queueMicrotask(() => {
+      cleanupLifecycle();
+      game?.dispose?.();
+      showFatalFallback(app, error);
+    });
+  };
 
   try {
     const eventBus = options.eventBus ?? new EventBus();
     const saveManager = options.saveManager ?? new SaveManager({ storage, createInitialState });
     const state = options.state ?? saveManager.load();
-    const game = new GameClass({
+    game = new GameClass({
       container: app,
       state,
       eventBus,
       saveManager,
-      onFatal: (error) => showFatalFallback(app, error),
+      onFatal: handleFatal,
     });
     game.start();
     app.setAttribute('aria-busy', 'false');
     app.classList.add('is-ready');
     if (loadingStatus) loadingStatus.textContent = 'Your village is ready.';
     addScenicOverlay(app);
-    root.defaultView?.addEventListener('pagehide', () => game.dispose(), { once: true });
+    cleanupLifecycle = installPageLifecycle(game, root.defaultView);
     return game;
   } catch (error) {
+    cleanupLifecycle();
+    game?.dispose?.();
     showFatalFallback(app, error);
     return null;
   }

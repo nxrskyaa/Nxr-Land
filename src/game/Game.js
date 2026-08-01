@@ -2,7 +2,9 @@ import * as THREE from 'three';
 import { World } from './World.js';
 
 const MAX_DELTA_SECONDS = 0.05;
-const CAMERA_SIZE = 36;
+const WORLD_WIDTH = 40;
+const WORLD_HEIGHT = 30;
+const CAMERA_MARGIN = 1.08;
 
 export function clampDelta(delta) {
   if (!Number.isFinite(delta) || delta <= 0) return 0;
@@ -16,6 +18,13 @@ export function getRenderMetrics(rect = {}, devicePixelRatio = 1) {
   return { width, height, pixelRatio, aspect: width / height };
 }
 
+export function getOrthographicBounds(aspect = 1, worldWidth = WORLD_WIDTH, worldHeight = WORLD_HEIGHT, margin = CAMERA_MARGIN) {
+  const safeAspect = Number.isFinite(aspect) && aspect > 0 ? aspect : 1;
+  const halfHeight = Math.max(worldHeight * margin / 2, worldWidth * margin / (2 * safeAspect));
+  const halfWidth = halfHeight * safeAspect;
+  return { left: -halfWidth, right: halfWidth, top: halfHeight, bottom: -halfHeight };
+}
+
 export class Game {
   constructor({ container, state, eventBus, saveManager, rendererFactory, onFatal } = {}) {
     if (!container) throw new Error('Game requires a container element');
@@ -25,10 +34,10 @@ export class Game {
     this.saveManager = saveManager;
     this.onFatal = onFatal;
     this.running = false;
+    this.disposed = false;
     this.frameId = null;
     this.elapsed = 0;
     this.lastTime = 0;
-    this.clock = new THREE.Clock(false);
 
     try {
       const createRenderer = rendererFactory ?? ((options) => new THREE.WebGLRenderer(options));
@@ -38,9 +47,10 @@ export class Game {
       this.renderer.toneMappingExposure = 1.08;
       this.renderer.setClearColor(0xbfe3dd, 1);
       this.renderer.shadowMap.enabled = state?.settings?.graphics?.shadows !== false;
-      this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      this.renderer.shadowMap.type = THREE.PCFShadowMap;
       this.renderer.domElement.className = 'game-canvas';
       this.renderer.domElement.setAttribute('aria-label', 'Nxr Land village diorama');
+      this.renderer.domElement.setAttribute('aria-describedby', 'landmark-description');
       this.container.append(this.renderer.domElement);
 
       this.scene = new THREE.Scene();
@@ -70,9 +80,10 @@ export class Game {
   #addLighting() {
     const hemisphere = new THREE.HemisphereLight(0xfff4dc, 0x5c7969, 2.25);
     const key = new THREE.DirectionalLight(0xffd3a0, 3.65);
+    this.keyLight = key;
     key.position.set(-12, 24, 15);
     key.castShadow = this.renderer.shadowMap.enabled;
-    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.mapSize.set(1024, 1024);
     key.shadow.camera.left = -24;
     key.shadow.camera.right = 24;
     key.shadow.camera.top = 22;
@@ -97,9 +108,8 @@ export class Game {
   }
 
   start() {
-    if (this.running) return;
+    if (this.running || this.disposed) return;
     this.running = true;
-    this.clock.start();
     this.lastTime = performance.now();
     this.update(0, 0);
     this.render();
@@ -129,25 +139,32 @@ export class Game {
     const metrics = getRenderMetrics(this.container.getBoundingClientRect(), window.devicePixelRatio);
     this.renderer.setPixelRatio(metrics.pixelRatio);
     this.renderer.setSize(metrics.width, metrics.height, false);
-    const halfHeight = CAMERA_SIZE / 2;
-    this.camera.left = -halfHeight * metrics.aspect;
-    this.camera.right = halfHeight * metrics.aspect;
-    this.camera.top = halfHeight;
-    this.camera.bottom = -halfHeight;
+    const bounds = getOrthographicBounds(metrics.aspect);
+    Object.assign(this.camera, bounds);
     this.camera.updateProjectionMatrix();
+
     const lowPower = metrics.width < 700 || metrics.pixelRatio > 1.75;
+    const shadowSize = lowPower ? 512 : 1024;
+    if (this.keyLight && this.keyLight.shadow.mapSize.width !== shadowSize) {
+      this.keyLight.shadow.map?.dispose();
+      this.keyLight.shadow.map = null;
+      this.keyLight.shadow.mapSize.set(shadowSize, shadowSize);
+    }
     this.renderer.shadowMap.autoUpdate = !lowPower;
     if (lowPower) this.renderer.shadowMap.needsUpdate = true;
+    const viewportHeight = bounds.top - bounds.bottom;
+    this.world?.setLabelScale(Math.min(1.6, viewportHeight / (WORLD_HEIGHT * CAMERA_MARGIN)));
   }
 
   stop() {
     this.running = false;
-    this.clock.stop();
     if (this.frameId !== null) cancelAnimationFrame(this.frameId);
     this.frameId = null;
   }
 
   dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
     this.stop();
     this.resizeObserver?.disconnect();
     if (typeof window !== 'undefined' && this.boundResize) window.removeEventListener('resize', this.boundResize);
@@ -161,5 +178,6 @@ export class Game {
     this.renderer = null;
     this.scene = null;
     this.camera = null;
+    this.keyLight = null;
   }
 }

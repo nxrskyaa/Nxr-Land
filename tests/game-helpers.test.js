@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clampDelta, getRenderMetrics } from '../src/game/Game.js';
+import { clampDelta, getOrthographicBounds, getRenderMetrics } from '../src/game/Game.js';
 
 describe('Game pure rendering helpers', () => {
   it('guards negative, invalid, and long-frame delta spikes', () => {
@@ -22,5 +22,22 @@ describe('Game pure rendering helpers', () => {
       pixelRatio: 1.5,
       aspect: 1.5,
     });
+  });
+
+  it('fits the complete 40 by 30 world with margin at desktop and portrait aspect ratios', () => {
+    const desktop = getOrthographicBounds(1280 / 720);
+    const mobile = getOrthographicBounds(320 / 577);
+
+    expect(desktop.top - desktop.bottom).toBeCloseTo(32.4);
+    expect(desktop.right - desktop.left).toBeGreaterThanOrEqual(43.2);
+    expect(mobile.right - mobile.left).toBeCloseTo(43.2);
+    expect(mobile.top - mobile.bottom).toBeGreaterThanOrEqual(32.4);
+  });
+
+  it('keeps wide screens height-fitted instead of adding excess vertical sky', () => {
+    const wide = getOrthographicBounds(21 / 9);
+
+    expect(wide.top).toBeCloseTo(16.2);
+    expect(wide.bottom).toBeCloseTo(-16.2);
   });
 });

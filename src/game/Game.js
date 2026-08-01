@@ -17,6 +17,10 @@ import { RewardSystem } from '../systems/RewardSystem.js';
 import { RewardUI } from '../ui/RewardUI.js';
 import { NPC } from '../entities/NPC.js';
 import { NPCFactory } from '../visuals/NPCFactory.js';
+import { GachaSystem } from '../systems/GachaSystem.js';
+import { GachaUI } from '../ui/GachaUI.js';
+import { WardrobeUI } from '../ui/WardrobeUI.js';
+import { Pet } from '../entities/Pet.js';
 
 const MAX_DELTA_SECONDS = 0.05;
 const WORLD_WIDTH = 40;
@@ -171,9 +175,11 @@ export class Game {
       this.economySystem = new EconomySystem({ state, eventBus, saveManager });
       this.questSystem = new QuestSystem({ state, eventBus, saveManager });
       this.rewardSystem = new RewardSystem({ state, eventBus, saveManager, clock, presence });
+      this.gachaSystem = new GachaSystem({ state, eventBus, saveManager });
       this.dialogueUI = new DialogueUI({ container: this.container, eventBus });
       this.questUI = new QuestUI({ container: this.container, questSystem: this.questSystem, eventBus });
       this.rewardUI = new RewardUI({ container: this.container, rewardSystem: this.rewardSystem, eventBus });
+      this.gachaUI = new GachaUI({ container: this.container, gachaSystem: this.gachaSystem, eventBus });
       this.npcFactory = new NPCFactory();
       this.npcs = [
         { id: 'mira', name: 'Mira', role: 'Village Steward', position: { x: 3.4, y: 0, z: -0.4 } },
@@ -207,6 +213,10 @@ export class Game {
         eventBus,
         saveManager,
       });
+      this.wardrobeUI = new WardrobeUI({ container: this.container, state, player: this.player, saveManager, eventBus });
+      this.pet = state.collection?.equipped?.petId
+        ? new Pet({ scene: this.scene, petId: state.collection.equipped.petId, position: state.player.position })
+        : null;
       this.cameraController = new CameraController(this.camera, {
         bounds: WORLD_BOUNDS,
         target: this.player.root.position,

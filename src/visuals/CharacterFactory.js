@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { WARDROBE_BY_ID } from '../data/items.js';
 
 export const CHARACTER_OPTIONS = Object.freeze({
   skinTones: [
@@ -77,13 +78,16 @@ function normalizeStyle(style = '') {
 }
 
 export function normalizeAppearance(appearance = {}) {
+  const wardrobe = (key) => WARDROBE_BY_ID[appearance[key]];
+  const hairWardrobe = wardrobe('hairStyle');
+  const hairMap = { 'wardrobe-hair-meadow-bob': 'meadow-bob', 'wardrobe-hair-cloud-curls': 'soft-curls', 'wardrobe-hair-river-braid': 'leafy-pixie', 'wardrobe-hair-star-sprouts': 'twin-buns' };
   return {
     skinTone: catalogValue('skinTone', appearance.skinTone),
-    hairStyle: normalizeStyle(appearance.hairStyle),
+    hairStyle: normalizeStyle(hairMap[hairWardrobe?.id] ?? appearance.hairStyle),
     hairColor: catalogValue('hairColor', appearance.hairColor),
-    top: catalogValue('top', appearance.top),
-    bottom: catalogValue('bottom', appearance.bottom),
-    shoes: catalogValue('shoes', appearance.shoes),
+    top: catalogValue('top', wardrobe('top')?.colors?.[0] ?? appearance.top),
+    bottom: catalogValue('bottom', wardrobe('bottom')?.colors?.[0] ?? appearance.bottom),
+    shoes: catalogValue('shoes', wardrobe('shoes')?.colors?.[0] ?? appearance.shoes),
     accessory: catalogValue('accessory', appearance.accessory),
   };
 }

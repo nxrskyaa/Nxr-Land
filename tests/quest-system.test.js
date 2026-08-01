@@ -85,7 +85,7 @@ describe('QuestSystem data-driven Chapter 1 flow', () => {
     });
     expect(context.state.collection.pets).toEqual(['pet-sproutling']);
     expect(context.state.collection.wardrobe).toContain('wardrobe-top-heartroot-jacket');
-    expect(context.state.world.unlocks).toEqual(['market', 'pet-gacha', 'building-mode', 'land-expansions']);
+    expect(context.state.world.unlocks).toEqual(['building-mode', 'land-expansions', 'market', 'pet-gacha']);
     expect(context.state.world.placedBuildings).toContainEqual(expect.objectContaining({ id: 'building-village-planter' }));
     expect(context.state.world.upgrades.heartrootFirstLight).toBe(true);
     expect(context.completed).toHaveLength(8);

@@ -73,7 +73,7 @@ export function createInitialState() {
       weather: 'clear',
       ownedLand: ['home-plot'],
       placedBuildings: [],
-      unlocks: [],
+      unlocks: ['building-mode', 'land-expansions'],
       upgrades: { houseLevel: 1 },
     },
     crops: {

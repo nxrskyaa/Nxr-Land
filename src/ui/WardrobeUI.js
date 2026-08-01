@@ -2,6 +2,26 @@ import { WARDROBE, WARDROBE_BY_ID } from '../data/items.js';
 
 const SLOTS = ['hair', 'top', 'bottom', 'shoes', 'accessory'];
 const HAIR_STYLES = { 'wardrobe-hair-meadow-bob': 'meadow-bob', 'wardrobe-hair-cloud-curls': 'soft-curls', 'wardrobe-hair-river-braid': 'leafy-pixie', 'wardrobe-hair-star-sprouts': 'twin-buns' };
+const HAIR_CYCLE = ['meadow-bob', 'soft-curls', 'leafy-pixie', 'twin-buns'];
+const ACCESSORY_CYCLE = ['leaf-pin', 'flower-clip', 'round-glasses'];
+
+function stableIndex(id, modulo) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i += 1) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  return hash % modulo;
+}
+
+function hairStyleFor(id) {
+  if (HAIR_STYLES[id]) return HAIR_STYLES[id];
+  return HAIR_CYCLE[stableIndex(id, HAIR_CYCLE.length)];
+}
+
+function accessoryFor(id) {
+  if (id.includes('glasses')) return 'round-glasses';
+  if (id.includes('flower') || id.includes('bow') || id.includes('pin')) return 'flower-clip';
+  if (id.includes('hat') || id.includes('beret') || id.includes('crown')) return 'leaf-pin';
+  return ACCESSORY_CYCLE[stableIndex(id, ACCESSORY_CYCLE.length)];
+}
 
 export function appearanceFromWardrobe(state) {
   const equipped = state.collection.equipped.wardrobe;
@@ -9,8 +29,8 @@ export function appearanceFromWardrobe(state) {
   for (const slot of SLOTS) {
     const item = WARDROBE_BY_ID[equipped[slot]];
     if (!item) continue;
-    if (slot === 'hair') appearance.hairStyle = HAIR_STYLES[item.id] ?? appearance.hairStyle;
-    else if (slot === 'accessory') appearance.accessory = item.id.includes('glasses') ? 'round-glasses' : item.id.includes('flower') ? 'flower-clip' : 'leaf-pin';
+    if (slot === 'hair') appearance.hairStyle = hairStyleFor(item.id);
+    else if (slot === 'accessory') appearance.accessory = accessoryFor(item.id);
     else appearance[slot] = item.colors[0];
   }
   return appearance;

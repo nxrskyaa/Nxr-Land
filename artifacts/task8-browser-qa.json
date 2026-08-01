@@ -1,0 +1,258 @@
+{
+  "ok": true,
+  "completedIds": [
+    "chapter-1-arrive",
+    "chapter-1-clear-garden",
+    "chapter-1-plant-crop",
+    "chapter-1-reopen-market",
+    "chapter-1-find-spirit-seed",
+    "chapter-1-hatch-first-pet",
+    "chapter-1-rebuild-planter",
+    "chapter-1-restore-heartroot"
+  ],
+  "activeId": null,
+  "coin": 498,
+  "pets": [
+    "pet-sproutling"
+  ],
+  "wardrobe": [
+    "wardrobe-hair-meadow-bob",
+    "wardrobe-top-garden-tee",
+    "wardrobe-bottom-patch-shorts",
+    "wardrobe-shoes-garden-clogs",
+    "wardrobe-accessory-straw-hat",
+    "wardrobe-top-heartroot-jacket"
+  ],
+  "unlocks": [
+    "market",
+    "pet-gacha",
+    "building-mode",
+    "land-expansions"
+  ],
+  "planter": {
+    "id": "building-village-planter",
+    "x": 2.8,
+    "y": 0,
+    "z": -2.4,
+    "rotation": 0
+  },
+  "heartrootFirstLight": true,
+  "dialogue": {
+    "open": true,
+    "firstLine": "Heartroot glows with first light.",
+    "secondLine": "The village is ready for its next chapter."
+  },
+  "mobileUI": {
+    "quest": true,
+    "dialogue": true,
+    "action": true,
+    "joystick": true,
+    "hotbar": true,
+    "overflowX": false,
+    "questRect": {
+      "left": 153.609375,
+      "top": 141.59375,
+      "right": 309.609375,
+      "bottom": 264.8125
+    },
+    "dialogueRect": {
+      "left": 10.40625,
+      "top": 295.75,
+      "right": 309.59375,
+      "bottom": 414.609375
+    },
+    "actionRect": {
+      "left": 225.609375,
+      "top": 480.21875,
+      "right": 300,
+      "bottom": 554.609375
+    },
+    "joystickRect": {
+      "left": 16,
+      "top": 457,
+      "right": 120,
+      "bottom": 561
+    },
+    "hotbarRect": {
+      "left": 16,
+      "top": 427.40625,
+      "right": 304,
+      "bottom": 475.40625
+    }
+  },
+  "trace": [
+    {
+      "label": "entered town plaza",
+      "activeId": "chapter-1-clear-garden",
+      "completed": [
+        "chapter-1-arrive"
+      ],
+      "progress": {
+        "chapter-1-arrive": 1,
+        "chapter-1-clear-garden": 0,
+        "chapter-1-plant-crop": 0,
+        "chapter-1-reopen-market": 0,
+        "chapter-1-find-spirit-seed": 0,
+        "chapter-1-hatch-first-pet": 0,
+        "chapter-1-rebuild-planter": 0,
+        "chapter-1-restore-heartroot": 0
+      },
+      "coin": 70
+    },
+    {
+      "label": "cleared three weeds",
+      "activeId": "chapter-1-plant-crop",
+      "completed": [
+        "chapter-1-arrive",
+        "chapter-1-clear-garden"
+      ],
+      "progress": {
+        "chapter-1-arrive": 1,
+        "chapter-1-clear-garden": 3,
+        "chapter-1-plant-crop": 0,
+        "chapter-1-reopen-market": 0,
+        "chapter-1-find-spirit-seed": 0,
+        "chapter-1-hatch-first-pet": 0,
+        "chapter-1-rebuild-planter": 0,
+        "chapter-1-restore-heartroot": 0
+      },
+      "coin": 95
+    },
+    {
+      "label": "watered first crop",
+      "activeId": "chapter-1-reopen-market",
+      "completed": [
+        "chapter-1-arrive",
+        "chapter-1-clear-garden",
+        "chapter-1-plant-crop"
+      ],
+      "progress": {
+        "chapter-1-arrive": 1,
+        "chapter-1-clear-garden": 3,
+        "chapter-1-plant-crop": 1,
+        "chapter-1-reopen-market": 0,
+        "chapter-1-find-spirit-seed": 0,
+        "chapter-1-hatch-first-pet": 0,
+        "chapter-1-rebuild-planter": 0,
+        "chapter-1-restore-heartroot": 0
+      },
+      "coin": 125
+    },
+    {
+      "label": "harvested and sold produce",
+      "activeId": "chapter-1-find-spirit-seed",
+      "completed": [
+        "chapter-1-arrive",
+        "chapter-1-clear-garden",
+        "chapter-1-plant-crop",
+        "chapter-1-reopen-market"
+      ],
+      "progress": {
+        "chapter-1-arrive": 1,
+        "chapter-1-clear-garden": 3,
+        "chapter-1-plant-crop": 1,
+        "chapter-1-reopen-market": 1,
+        "chapter-1-find-spirit-seed": 0,
+        "chapter-1-hatch-first-pet": 0,
+        "chapter-1-rebuild-planter": 0,
+        "chapter-1-restore-heartroot": 0
+      },
+      "coin": 193
+    },
+    {
+      "label": "collected Spirit Seed",
+      "activeId": "chapter-1-hatch-first-pet",
+      "completed": [
+        "chapter-1-arrive",
+        "chapter-1-clear-garden",
+        "chapter-1-plant-crop",
+        "chapter-1-reopen-market",
+        "chapter-1-find-spirit-seed"
+      ],
+      "progress": {
+        "chapter-1-arrive": 1,
+        "chapter-1-clear-garden": 3,
+        "chapter-1-plant-crop": 1,
+        "chapter-1-reopen-market": 1,
+        "chapter-1-find-spirit-seed": 1,
+        "chapter-1-hatch-first-pet": 0,
+        "chapter-1-rebuild-planter": 0,
+        "chapter-1-restore-heartroot": 0
+      },
+      "coin": 233
+    },
+    {
+      "label": "hatched Sproutling with Lumi",
+      "activeId": "chapter-1-rebuild-planter",
+      "completed": [
+        "chapter-1-arrive",
+        "chapter-1-clear-garden",
+        "chapter-1-plant-crop",
+        "chapter-1-reopen-market",
+        "chapter-1-find-spirit-seed",
+        "chapter-1-hatch-first-pet"
+      ],
+      "progress": {
+        "chapter-1-arrive": 1,
+        "chapter-1-clear-garden": 3,
+        "chapter-1-plant-crop": 1,
+        "chapter-1-reopen-market": 1,
+        "chapter-1-find-spirit-seed": 1,
+        "chapter-1-hatch-first-pet": 1,
+        "chapter-1-rebuild-planter": 0,
+        "chapter-1-restore-heartroot": 0
+      },
+      "coin": 273
+    },
+    {
+      "label": "placed village planter",
+      "activeId": "chapter-1-restore-heartroot",
+      "completed": [
+        "chapter-1-arrive",
+        "chapter-1-clear-garden",
+        "chapter-1-plant-crop",
+        "chapter-1-reopen-market",
+        "chapter-1-find-spirit-seed",
+        "chapter-1-hatch-first-pet",
+        "chapter-1-rebuild-planter"
+      ],
+      "progress": {
+        "chapter-1-arrive": 1,
+        "chapter-1-clear-garden": 3,
+        "chapter-1-plant-crop": 1,
+        "chapter-1-reopen-market": 1,
+        "chapter-1-find-spirit-seed": 1,
+        "chapter-1-hatch-first-pet": 1,
+        "chapter-1-rebuild-planter": 1,
+        "chapter-1-restore-heartroot": 0
+      },
+      "coin": 348
+    },
+    {
+      "label": "restored Heartroot first light",
+      "activeId": null,
+      "completed": [
+        "chapter-1-arrive",
+        "chapter-1-clear-garden",
+        "chapter-1-plant-crop",
+        "chapter-1-reopen-market",
+        "chapter-1-find-spirit-seed",
+        "chapter-1-hatch-first-pet",
+        "chapter-1-rebuild-planter",
+        "chapter-1-restore-heartroot"
+      ],
+      "progress": {
+        "chapter-1-arrive": 1,
+        "chapter-1-clear-garden": 3,
+        "chapter-1-plant-crop": 1,
+        "chapter-1-reopen-market": 1,
+        "chapter-1-find-spirit-seed": 1,
+        "chapter-1-hatch-first-pet": 1,
+        "chapter-1-rebuild-planter": 1,
+        "chapter-1-restore-heartroot": 1
+      },
+      "coin": 498
+    }
+  ],
+  "errors": []
+}

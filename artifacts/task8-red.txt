@@ -1,0 +1,37 @@
+
+> nxr-land@0.1.0 test
+> vitest --run tests/quest-system.test.js
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/home/ubuntu/Nxr-Land[39m
+
+ [31m❯[39m tests/quest-system.test.js [2m([22m[2m0 test[22m[2m)[22m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Suites 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m tests/quest-system.test.js[2m [ tests/quest-system.test.js ][22m
+[31m[1mError[22m: Failed to resolve import "../src/systems/QuestSystem.js" from "tests/quest-system.test.js". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36m/home/ubuntu/Nxr-Land/tests/quest-system.test.js[39m:7:29
+[33m  5  |  import { createInitialState } from '../src/game/createState.js';
+  6  |  import { EventBus } from '../src/game/EventBus.js';
+  7  |  import { QuestSystem } from '../src/systems/QuestSystem.js';
+     |                               ^
+  8  |  import { NPC } from '../src/entities/NPC.js';
+  9  |  import { NPCFactory } from '../src/visuals/NPCFactory.js';[39m
+[90m [2m❯[22m TransformPluginContext._formatLog node_modules/vite/dist/node/chunks/node.js:[2m31011:39[22m[39m
+[90m [2m❯[22m TransformPluginContext.error node_modules/vite/dist/node/chunks/node.js:[2m31008:14[22m[39m
+[90m [2m❯[22m normalizeUrl node_modules/vite/dist/node/chunks/node.js:[2m27957:18[22m[39m
+[90m [2m❯[22m node_modules/vite/dist/node/chunks/node.js:[2m28025:30[22m[39m
+[90m [2m❯[22m TransformPluginContext.transform node_modules/vite/dist/node/chunks/node.js:[2m27993:4[22m[39m
+[90m [2m❯[22m EnvironmentPluginContainer.transform node_modules/vite/dist/node/chunks/node.js:[2m30796:14[22m[39m
+[90m [2m❯[22m loadAndTransform node_modules/vite/dist/node/chunks/node.js:[2m20594:26[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [2mno tests[22m
+[2m   Start at [22m 19:11:58
+[2m   Duration [22m 2.41s[2m (transform 0ms, setup 0ms, import 0ms, tests 0ms, environment 1.84s)[22m
+

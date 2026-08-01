@@ -1,7 +1,7 @@
 import { ITEM_BY_ID, TOOLS } from '../data/items.js';
 
 const NUMBER_CODES = Object.fromEntries(Array.from({ length: 9 }, (_, index) => [`Digit${index + 1}`, index]));
-const REFRESH_EVENTS = ['economy:purchased', 'economy:sold', 'crop:planted', 'crop:harvested', 'hotbar:selected'];
+const REFRESH_EVENTS = ['economy:purchased', 'economy:sold', 'crop:planted', 'crop:harvested', 'hotbar:selected', 'quest:completed'];
 
 function editable(target) {
   return Boolean(target?.closest?.('input, textarea, select, [contenteditable="true"], [role="dialog"]'));

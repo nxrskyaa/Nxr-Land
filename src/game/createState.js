@@ -73,6 +73,7 @@ export function createInitialState() {
       weather: 'clear',
       ownedLand: ['home-plot'],
       placedBuildings: [],
+      unlocks: [],
       upgrades: { houseLevel: 1 },
     },
     crops: {
@@ -112,6 +113,7 @@ export function createInitialState() {
       chapter: 1,
       activeId: QUESTS[0].id,
       completedIds: [],
+      interactedIds: [],
       progress: Object.fromEntries(QUESTS.map((quest) => [quest.id, 0])),
     },
     rewards: {

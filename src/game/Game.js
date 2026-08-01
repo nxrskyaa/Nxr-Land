@@ -10,6 +10,11 @@ import { EconomySystem } from '../systems/EconomySystem.js';
 import { InventoryUI } from '../ui/InventoryUI.js';
 import { ShopUI } from '../ui/ShopUI.js';
 import { HotbarUI } from '../ui/HotbarUI.js';
+import { QuestSystem } from '../systems/QuestSystem.js';
+import { DialogueUI } from '../ui/DialogueUI.js';
+import { QuestUI } from '../ui/QuestUI.js';
+import { NPC } from '../entities/NPC.js';
+import { NPCFactory } from '../visuals/NPCFactory.js';
 
 const MAX_DELTA_SECONDS = 0.05;
 const WORLD_WIDTH = 40;
@@ -43,6 +48,24 @@ export function findNearestPlot(position, plotPositions, radius = 1.65) {
     if (distance <= radius && (!nearest || distance < nearest.distance)) nearest = { plotId, position: plotPosition, distance };
   }
   return nearest;
+}
+
+export function chooseInteractionTarget(targets = [], { dialogueOpen = false } = {}) {
+  if (dialogueOpen) return { type: 'dialogue' };
+  const priority = { quest: 0, npc: 1, farm: 2 };
+  return targets
+    .filter((target) => Number.isFinite(target?.distance) && Object.hasOwn(priority, target.type))
+    .sort((left, right) => priority[left.type] - priority[right.type] || left.distance - right.distance)[0] ?? null;
+}
+
+export function getEnteredLocation(position, previousLocation = null) {
+  if (!position || !Number.isFinite(position.x) || !Number.isFinite(position.z)) return null;
+  const locations = [
+    { id: 'town-plaza', inside: Math.abs(position.x) <= 3.2 && position.z >= -3.2 && position.z <= 3.2 },
+    { id: 'river-garden', inside: position.x >= 5 && position.x <= 13 && position.z >= -11 && position.z <= -4 },
+  ];
+  const current = locations.find(({ inside }) => inside)?.id ?? null;
+  return current && current !== previousLocation ? current : null;
 }
 
 export function choosePlotAction(plot, inventory = {}, selectedHotbarId = null) {
@@ -144,6 +167,17 @@ export class Game {
         state, eventBus, saveManager, plotPositions: this.world.getPlotPositions(),
       });
       this.economySystem = new EconomySystem({ state, eventBus, saveManager });
+      this.questSystem = new QuestSystem({ state, eventBus, saveManager });
+      this.dialogueUI = new DialogueUI({ container: this.container, eventBus });
+      this.questUI = new QuestUI({ container: this.container, questSystem: this.questSystem, eventBus });
+      this.npcFactory = new NPCFactory();
+      this.npcs = [
+        { id: 'mira', name: 'Mira', role: 'Village Steward', position: { x: 3.4, y: 0, z: -0.4 } },
+        { id: 'tomo', name: 'Tomo', role: 'Market Keeper', position: { x: -6.7, y: 0, z: 1.2 } },
+        { id: 'lumi', name: 'Lumi', role: 'Spirit Researcher', position: { x: 10.4, y: 0, z: -5.6 } },
+      ].map((definition) => new NPC({ scene: this.scene, factory: this.npcFactory, definition }));
+      this.#buildQuestObjects();
+      this.currentLocation = null;
       this.inventoryUI = new InventoryUI({ container: this.container, state, eventBus });
       this.shopUI = new ShopUI({
         container: this.container, state, eventBus, economySystem: this.economySystem,
@@ -226,6 +260,107 @@ export class Game {
     this.scene.add(hemisphere, key, fill, rim);
   }
 
+  #buildQuestObjects() {
+    this.questObjects = new Map();
+    this.questObjectResources = { geometries: new Set(), materials: new Set() };
+    const geometry = (value) => {
+      this.questObjectResources.geometries.add(value);
+      return value;
+    };
+    const material = (color, options = {}) => {
+      const value = new THREE.MeshStandardMaterial({ color, roughness: 0.72, ...options });
+      this.questObjectResources.materials.add(value);
+      return value;
+    };
+    const addMesh = (root, shape, surface, position = {}) => {
+      const mesh = new THREE.Mesh(shape, surface);
+      mesh.position.set(position.x ?? 0, position.y ?? 0, position.z ?? 0);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      root.add(mesh);
+      return mesh;
+    };
+
+    for (const definition of this.questSystem.getWorldObjects()) {
+      const root = new THREE.Group();
+      root.name = `Quest object ${definition.id}`;
+      root.position.set(definition.position.x, definition.position.y, definition.position.z);
+      root.userData.baseY = definition.position.y;
+      root.userData.questObjectId = definition.id;
+      const leaf = material(0x5d9b58);
+      const glow = material(0xf7d978, { emissive: 0xf1b84b, emissiveIntensity: 0.55 });
+      const wood = material(0x9a6b49);
+      const stone = material(0x91a99d);
+      if (definition.id.startsWith('garden-weed-')) {
+        for (const [x, z, rotation] of [[-0.2, 0, -0.25], [0.05, 0.05, 0.08], [0.22, -0.05, 0.3]]) {
+          const blade = addMesh(root, geometry(new THREE.ConeGeometry(0.12, 0.72, 6)), leaf, { x, y: 0.36, z });
+          blade.rotation.z = rotation;
+        }
+      } else if (definition.id === 'river-spirit-seed') {
+        addMesh(root, geometry(new THREE.IcosahedronGeometry(0.38, 1)), glow, { y: 0.82 });
+        const ring = addMesh(root, geometry(new THREE.TorusGeometry(0.58, 0.055, 8, 24)), glow, { y: 0.82 });
+        ring.rotation.x = Math.PI / 2;
+      } else if (definition.id === 'lumi-hatch-nook') {
+        addMesh(root, geometry(new THREE.CylinderGeometry(0.72, 0.9, 0.28, 12)), stone, { y: 0.14 });
+        const egg = addMesh(root, geometry(new THREE.SphereGeometry(0.42, 12, 9)), glow, { y: 0.76 });
+        egg.scale.y = 1.28;
+      } else if (definition.id === 'village-planter-site') {
+        addMesh(root, geometry(new THREE.BoxGeometry(1.35, 0.58, 0.78)), wood, { y: 0.3 });
+        for (const x of [-0.4, 0, 0.4]) {
+          addMesh(root, geometry(new THREE.SphereGeometry(0.19, 8, 6)), leaf, { x, y: 0.76 });
+        }
+      } else {
+        addMesh(root, geometry(new THREE.SphereGeometry(0.36, 12, 9)), glow, { y: 0.72 });
+        const halo = addMesh(root, geometry(new THREE.TorusGeometry(0.58, 0.07, 8, 24)), glow, { y: 0.72 });
+        halo.rotation.y = Math.PI / 2;
+      }
+      const marker = addMesh(root, geometry(new THREE.OctahedronGeometry(0.2, 0)), glow, { y: 1.7 });
+      marker.name = 'Quest marker';
+      this.scene.add(root);
+      this.questObjects.set(definition.id, { ...definition, root, marker });
+    }
+    this.questUnsubscribers = ['quest:progress', 'quest:completed', 'quest:started']
+      .map((type) => this.eventBus?.on?.(type, () => this.#syncQuestObjects()))
+      .filter(Boolean);
+    this.#syncQuestObjects();
+  }
+
+  #syncQuestObjects() {
+    const current = new Map(this.questSystem?.getWorldObjects?.().map((entry) => [entry.id, entry]) ?? []);
+    for (const [id, object] of this.questObjects ?? []) {
+      const state = current.get(id);
+      if (!state) continue;
+      object.active = state.active;
+      object.used = state.used;
+      const persistent = id === 'village-planter-site' || id === 'heartroot-first-light';
+      object.root.visible = (state.active && !state.used) || (persistent && state.used);
+      object.marker.visible = state.active && !state.used;
+      object.root.userData.active = state.active;
+      object.root.userData.used = state.used;
+    }
+  }
+
+  #getInteractionTargets() {
+    const position = this.player?.position;
+    if (!position) return [];
+    const targets = [];
+    for (const [id, object] of this.questObjects ?? []) {
+      const distance = Math.hypot(position.x - object.position.x, position.z - object.position.z);
+      if (object.active && !object.used && distance <= 1.75) {
+        targets.push({ type: 'quest', id, label: object.label, distance });
+      }
+    }
+    for (const npc of this.npcs ?? []) {
+      const distance = npc.distanceTo(position);
+      if (distance <= npc.interactionRadius) {
+        targets.push({ type: 'npc', id: npc.id, npc, label: `Talk to ${npc.name}`, distance });
+      }
+    }
+    const plot = findNearestPlot(position, this.world?.getPlotPositions());
+    if (plot) targets.push({ type: 'farm', id: plot.plotId, plot, label: 'Tend garden bed', distance: plot.distance });
+    return targets;
+  }
+
   #screenToWorld(clientX, clientY) {
     if (!this.renderer?.domElement || !this.camera || !this.raycaster) return null;
     const rect = this.renderer.domElement.getBoundingClientRect();
@@ -240,8 +375,24 @@ export class Game {
   }
 
   #handleAction() {
+    if (this.dialogueUI?.isOpen()) {
+      this.dialogueUI.advance();
+      return;
+    }
     this.eventBus?.emit?.('player:action', { position: { ...this.state.player.position } });
-    const nearby = findNearestPlot(this.player?.position, this.world?.getPlotPositions());
+    const target = chooseInteractionTarget(this.#getInteractionTargets());
+    if (target?.type === 'quest') {
+      const result = this.questSystem.interact(target.id);
+      this.#syncQuestObjects();
+      this.#showActionFeedback(result.ok ? target.label : result.message);
+      return;
+    }
+    if (target?.type === 'npc') {
+      this.dialogueUI.open(this.questSystem.getDialogue(target.id));
+      this.dialogueUI.setPrompt('');
+      return;
+    }
+    const nearby = target?.type === 'farm' ? target.plot : null;
     let message = 'Nothing nearby — keep exploring';
     if (nearby) {
       const plot = this.state.crops.plots.find((entry) => entry.id === nearby.plotId);
@@ -326,6 +477,25 @@ export class Game {
     updateFarmingFrame(this, safeDelta);
     this.world?.update(safeDelta, elapsed);
     this.player?.update(safeDelta, elapsed);
+    const location = getEnteredLocation(this.player?.position, null);
+    if (location && location !== this.currentLocation) {
+      this.eventBus?.emit?.('location:entered', {
+        locationId: location,
+        position: { ...this.state.player.position },
+      });
+    }
+    this.currentLocation = location;
+    for (const npc of this.npcs ?? []) npc.update(safeDelta, elapsed);
+    for (const object of this.questObjects?.values?.() ?? []) {
+      if (!object.root.visible) continue;
+      object.root.position.y = object.root.userData.baseY
+        + (object.active ? Math.sin(elapsed * 2.2 + object.id.length) * 0.045 : 0);
+      if (object.marker.visible) object.marker.rotation.y += safeDelta * 1.8;
+    }
+    const promptTarget = chooseInteractionTarget(this.#getInteractionTargets(), {
+      dialogueOpen: this.dialogueUI?.isOpen(),
+    });
+    this.dialogueUI?.setPrompt(promptTarget && promptTarget.type !== 'dialogue' ? promptTarget.label : '');
     this.cameraController?.update(safeDelta);
   }
 
@@ -376,6 +546,16 @@ export class Game {
     }
     if (this.feedbackTimer) clearTimeout(this.feedbackTimer);
     this.creator?.dispose();
+    this.questUnsubscribers?.splice(0).forEach((unsubscribe) => unsubscribe());
+    this.dialogueUI?.dispose();
+    this.questUI?.dispose();
+    this.questSystem?.dispose();
+    this.npcs?.forEach((npc) => npc.dispose());
+    this.npcFactory?.dispose();
+    this.questObjects?.forEach(({ root }) => root.removeFromParent());
+    this.questObjectResources?.geometries.forEach((geometry) => geometry.dispose());
+    this.questObjectResources?.materials.forEach((material) => material.dispose());
+    this.questObjects?.clear();
     this.inventoryUI?.dispose();
     this.shopUI?.dispose();
     this.hotbarUI?.dispose();
@@ -392,6 +572,13 @@ export class Game {
     this.inventoryUI = null;
     this.shopUI = null;
     this.hotbarUI = null;
+    this.dialogueUI = null;
+    this.questUI = null;
+    this.questSystem = null;
+    this.npcs = null;
+    this.npcFactory = null;
+    this.questObjects = null;
+    this.questObjectResources = null;
     this.economySystem = null;
     this.cameraController = null;
     this.renderer = null;

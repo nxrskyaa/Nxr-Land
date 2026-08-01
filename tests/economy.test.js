@@ -189,6 +189,11 @@ describe('inventory, market, and hotbar UI', () => {
     expect(container.querySelector('[data-hotbar-item="seed-turnip"]')).toBeNull();
     eventBus.emit('crop:harvested', { itemId: 'produce-turnip' });
     expect(container.querySelector('[data-inventory-item="produce-turnip"] [data-quantity]').textContent).toBe('1');
+    state.economy.coin = 777;
+    state.economy.inventory['seed-carrot'] = 3;
+    eventBus.emit('quest:completed', { questId: 'chapter-test' });
+    expect(container.querySelector('[data-coin-balance]').textContent).toContain('777');
+    expect(container.querySelector('[data-hotbar-item="seed-carrot"] b').textContent).toBe('3');
     inventory.dispose(); shop.dispose(); hotbar.dispose();
     inventory.dispose(); shop.dispose(); hotbar.dispose();
     expect(container.querySelector('.inventory-ui')).toBeNull();

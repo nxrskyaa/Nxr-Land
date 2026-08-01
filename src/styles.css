@@ -375,9 +375,66 @@ button { font: inherit; }
     padding: 0 max(1.25rem, env(safe-area-inset-right)) max(1.25rem, env(safe-area-inset-bottom)) max(1.25rem, env(safe-area-inset-left));
     pointer-events: none;
   }
-  .controls-enabled .joystick,
-  .controls-enabled .action-button { pointer-events: auto; }
-  .controls-enabled .joystick { width: 6.5rem; height: 6.5rem; }
+  .joystick {
+    position: relative;
+    width: 6.5rem;
+    height: 6.5rem;
+    border: 1px solid rgb(255 255 255 / 58%);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgb(255 252 238 / 24%) 0 30%, rgb(55 79 64 / 22%) 32% 100%);
+    box-shadow: 0 .75rem 1.8rem rgb(42 62 51 / 22%), inset 0 0 0 .45rem rgb(255 255 255 / 10%);
+    pointer-events: auto;
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+    backdrop-filter: blur(8px);
+  }
+  .joystick::after {
+    position: absolute;
+    inset: 16%;
+    border: 1px dashed rgb(255 255 255 / 30%);
+    border-radius: inherit;
+    content: "";
+  }
+  .joystick-knob {
+    position: absolute;
+    z-index: 1;
+    top: 50%;
+    left: 50%;
+    width: 2.8rem;
+    height: 2.8rem;
+    margin: -1.4rem 0 0 -1.4rem;
+    border: 1px solid rgb(255 255 255 / 68%);
+    border-radius: 50%;
+    background: linear-gradient(145deg, rgb(255 250 231 / 94%), rgb(219 232 207 / 86%));
+    box-shadow: 0 .35rem .8rem rgb(47 72 57 / 28%), inset 0 2px 2px rgb(255 255 255 / 72%);
+    will-change: transform;
+  }
+  .action-button {
+    display: grid;
+    width: 4.65rem;
+    height: 4.65rem;
+    margin: 0 .25rem .4rem 0;
+    place-content: center;
+    border: 1px solid rgb(255 255 255 / 72%);
+    border-radius: 50%;
+    color: #fffdf1;
+    background: linear-gradient(145deg, rgb(218 126 105 / 95%), rgb(183 92 85 / 94%));
+    box-shadow: 0 .7rem 1.5rem rgb(112 64 57 / 28%), inset 0 2px 2px rgb(255 255 255 / 25%);
+    pointer-events: auto;
+    font-size: 1.2rem;
+    font-weight: 900;
+    line-height: .9;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .action-button small {
+    margin-top: .28rem;
+    font-size: .48rem;
+    font-weight: 850;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  .action-button:active { transform: translateY(2px) scale(.97); }
   .controls-enabled .action-feedback { bottom: calc(7.8rem + env(safe-area-inset-bottom)); }
 }
 

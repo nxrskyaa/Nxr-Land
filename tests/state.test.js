@@ -190,14 +190,17 @@ describe('createInitialState', () => {
       day: expect.any(Number),
       weather: expect.any(String),
       ownedLand: expect.any(Array),
-      plots: expect.any(Array),
       placedBuildings: expect.any(Array),
+    }));
+    expect(state.world).not.toHaveProperty('plots');
+    expect(state.crops).toEqual(expect.objectContaining({
+      plots: expect.any(Array),
     }));
     expect(state.economy).toEqual(expect.objectContaining({
       coin: expect.any(Number),
       inventory: expect.any(Object),
     }));
-    expect(state.collections).toEqual(expect.objectContaining({
+    expect(state.collection).toEqual(expect.objectContaining({
       pets: expect.any(Array),
       wardrobe: expect.any(Array),
       equipped: expect.objectContaining({
@@ -205,6 +208,7 @@ describe('createInitialState', () => {
         wardrobe: expect.any(Object),
       }),
     }));
+    expect(state).not.toHaveProperty('collections');
     expect(state.quests).toEqual(expect.objectContaining({
       activeId: QUESTS[0].id,
       completedIds: [],
@@ -241,8 +245,9 @@ describe('createInitialState', () => {
     first.player.appearance.hairColor = '#000000';
     first.player.position.x = 999;
     first.world.ownedLand.push('expansion-west');
+    first.crops.plots[0].state = 'growing';
     first.economy.inventory['seed-turnip'] = 999;
-    first.collections.wardrobe.push('wardrobe-test');
+    first.collection.wardrobe.push('wardrobe-test');
     first.quests.progress[first.quests.activeId] = 99;
     first.rewards.playtime.milestones[0].claimed = true;
     first.gacha.pity.pet = 99;

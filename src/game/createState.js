@@ -45,9 +45,11 @@ export function createInitialState() {
       timeOfDayMs: 28_800_000,
       weather: 'clear',
       ownedLand: ['home-plot'],
-      plots: createPlots(),
       placedBuildings: [],
       upgrades: { houseLevel: 1 },
+    },
+    crops: {
+      plots: createPlots(),
     },
     economy: {
       coin: 50,
@@ -58,7 +60,7 @@ export function createInitialState() {
         'seed-turnip': 3,
       },
     },
-    collections: {
+    collection: {
       pets: [],
       wardrobe: [
         'wardrobe-hair-meadow-bob',

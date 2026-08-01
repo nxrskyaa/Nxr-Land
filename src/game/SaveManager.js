@@ -160,6 +160,7 @@ function isValidState(state) {
 
   const { player, world, crops, economy, collection, quests, rewards, gacha, settings, playtime } = state;
   return isNonEmptyString(player.name)
+    && (player.creatorComplete === undefined || typeof player.creatorComplete === 'boolean')
     && isPlainObject(player.appearance)
     && ['skinTone', 'hairStyle', 'hairColor'].every((key) => isNonEmptyString(player.appearance[key]))
     && isPlainObject(player.position)
@@ -289,7 +290,9 @@ function decode(serialized, createInitialState) {
 
   try {
     const parsed = JSON.parse(serialized);
-    if (isValidState(parsed)) return { state: parsed, migrated: false };
+    if (isValidState(parsed)) {
+      return { state: mergeDefaults(createInitialState(), parsed), migrated: false };
+    }
     if (!isPlainObject(parsed) || parsed.schemaVersion !== 0 || !isJsonSafe(parsed)) return null;
 
     const migrated = migrateVersionZero(parsed, createInitialState);

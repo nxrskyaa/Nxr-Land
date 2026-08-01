@@ -1,5 +1,9 @@
 import * as THREE from 'three';
-import { World } from './World.js';
+import { World, WORLD_BOUNDS, WORLD_COLLIDERS } from './World.js';
+import { Input } from './Input.js';
+import { CameraController } from './Camera.js';
+import { Player } from '../entities/Player.js';
+import { CharacterCreator } from '../ui/CharacterCreator.js';
 
 const MAX_DELTA_SECONDS = 0.05;
 const WORLD_WIDTH = 40;
@@ -61,6 +65,43 @@ export class Game {
       this.camera.lookAt(0, 0, 0);
       this.#addLighting();
       this.world = new World(this.scene, { state });
+      this.raycaster = new THREE.Raycaster();
+      this.groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+      this.input = new Input({
+        canvas: this.renderer.domElement,
+        container: this.container,
+        onAction: () => this.#handleAction(),
+        screenToWorld: (x, y) => this.#screenToWorld(x, y),
+      });
+      this.player = new Player({
+        scene: this.scene,
+        state,
+        input: this.input,
+        bounds: WORLD_BOUNDS,
+        colliders: WORLD_COLLIDERS,
+        eventBus,
+        saveManager,
+      });
+      this.cameraController = new CameraController(this.camera, {
+        bounds: WORLD_BOUNDS,
+        target: this.player.root.position,
+        framing: { x: 11, z: 8 },
+      });
+      const enterGame = () => {
+        this.input?.setEnabled(true);
+        this.container.classList.add('character-ready');
+      };
+      if (state?.player?.creatorComplete) enterGame();
+      else {
+        this.creator = new CharacterCreator({
+          container: this.container,
+          state,
+          player: this.player,
+          eventBus,
+          saveManager,
+          onComplete: enterGame,
+        });
+      }
       this.#observeResize();
       this.resize();
       this.#handleContextLost = (event) => {
@@ -98,6 +139,29 @@ export class Game {
     this.scene.add(hemisphere, key, fill, rim);
   }
 
+  #screenToWorld(clientX, clientY) {
+    if (!this.renderer?.domElement || !this.camera || !this.raycaster) return null;
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+    const pointer = new THREE.Vector2(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1,
+    );
+    this.raycaster.setFromCamera(pointer, this.camera);
+    const point = new THREE.Vector3();
+    return this.raycaster.ray.intersectPlane(this.groundPlane, point) ? { x: point.x, z: point.z } : null;
+  }
+
+  #handleAction() {
+    this.eventBus?.emit?.('player:action', { position: { ...this.state.player.position } });
+    const feedback = this.container.querySelector('.action-feedback');
+    if (!feedback) return;
+    feedback.textContent = 'Nothing nearby — keep exploring';
+    feedback.classList.add('is-visible');
+    clearTimeout(this.actionFeedbackTimer);
+    this.actionFeedbackTimer = setTimeout(() => feedback.classList.remove('is-visible'), 1300);
+  }
+
   #observeResize() {
     this.boundResize = () => this.resize();
     window.addEventListener('resize', this.boundResize, { passive: true });
@@ -127,7 +191,10 @@ export class Game {
   }
 
   update(delta, elapsed = this.elapsed) {
-    this.world?.update(clampDelta(delta), elapsed);
+    const safeDelta = clampDelta(delta);
+    this.world?.update(safeDelta, elapsed);
+    this.player?.update(safeDelta, elapsed);
+    this.cameraController?.update(safeDelta);
   }
 
   render() {
@@ -141,9 +208,12 @@ export class Game {
     this.renderer.setSize(metrics.width, metrics.height, false);
     const bounds = getOrthographicBounds(metrics.aspect);
     Object.assign(this.camera, bounds);
+    const mobile = metrics.width < 700;
+    this.camera.zoom = mobile ? 1.08 : 1.28;
     this.camera.updateProjectionMatrix();
+    this.cameraController?.setFraming(mobile ? { x: 14, z: 10 } : { x: 11, z: 8 });
 
-    const lowPower = metrics.width < 700 || metrics.pixelRatio > 1.75;
+    const lowPower = mobile || metrics.pixelRatio > 1.75;
     const shadowSize = lowPower ? 512 : 1024;
     if (this.keyLight && this.keyLight.shadow.mapSize.width !== shadowSize) {
       this.keyLight.shadow.map?.dispose();
@@ -171,10 +241,19 @@ export class Game {
     if (this.renderer?.domElement && this.#handleContextLost) {
       this.renderer.domElement.removeEventListener('webglcontextlost', this.#handleContextLost);
     }
+    clearTimeout(this.actionFeedbackTimer);
+    this.creator?.dispose();
+    this.input?.dispose();
+    this.cameraController?.dispose();
+    this.player?.dispose();
     this.world?.dispose();
     this.renderer?.dispose();
     this.renderer?.domElement?.remove();
     this.world = null;
+    this.player = null;
+    this.input = null;
+    this.creator = null;
+    this.cameraController = null;
     this.renderer = null;
     this.scene = null;
     this.camera = null;

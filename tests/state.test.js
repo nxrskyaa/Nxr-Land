@@ -44,6 +44,10 @@ function expectDeepFrozen(value) {
 }
 
 describe('game catalogs', () => {
+  it('starts with character creation incomplete', () => {
+    expect(createInitialState().player.creatorComplete).toBe(false);
+  });
+
   it('defines exactly six immutable crops with complete visual growth data', () => {
     expect(CROPS).toHaveLength(6);
     expect(CROPS.map(({ id }) => id)).toEqual([

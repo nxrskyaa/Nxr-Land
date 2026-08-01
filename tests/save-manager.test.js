@@ -37,6 +37,19 @@ describe('SaveManager', () => {
     expect(storage.getItem(BACKUP_SAVE_KEY)).toBeNull();
   });
 
+  it('validates creator completion and fills the default for older version-1 saves', () => {
+    const current = createInitialState();
+    expect(current.player.creatorComplete).toBe(false);
+    current.player.creatorComplete = 'yes';
+    expect(createManager(createStorage()).save(current)).toBe(false);
+
+    const oldState = createInitialState();
+    delete oldState.player.creatorComplete;
+    const storage = createStorage({ [PRIMARY_SAVE_KEY]: JSON.stringify(oldState) });
+    const manager = createManager(storage);
+    expect(manager.load().player.creatorComplete).toBe(false);
+  });
+
   it('rejects invalid, incomplete, or non-JSON-safe state without changing storage', () => {
     const original = JSON.stringify(createInitialState());
     const storage = createStorage({ [PRIMARY_SAVE_KEY]: original });

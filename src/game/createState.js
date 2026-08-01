@@ -53,6 +53,7 @@ export function createInitialState() {
     schemaVersion: 1,
     player: {
       name: 'New Gardener',
+      creatorComplete: false,
       appearance: {
         skinTone: '#c98f68',
         hairStyle: 'wardrobe-hair-meadow-bob',

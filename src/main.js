@@ -36,7 +36,8 @@ function addScenicOverlay(app) {
   overlay.innerHTML = `
     <header class="village-brand"><span class="brand-mark">N</span><div><b>Nxr Land</b><small>A tiny world, growing softly</small></div></header>
     <div class="day-pill"><span aria-hidden="true">☀</span><div><small>Meadow Day</small><b>Morning glow</b></div></div>
-    <p class="explore-note">A peaceful village is taking root</p>
+    <p class="explore-note controls-hint"><span>Move</span> WASD / Arrow keys <i>•</i> <span>Action</span> Space / E <i>•</i> Click to walk</p>
+    <p class="action-feedback" role="status" aria-live="polite"></p>
     <section id="landmark-description" class="visually-hidden">
       <h2>Village landmarks</h2>
       <ul><li>Town Plaza</li><li>Home Plot</li><li>Market Lane</li><li>River Garden</li><li>Mosswood Gate</li><li>Sunmeadow Gate</li><li>Heartroot</li></ul>

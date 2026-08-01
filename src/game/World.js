@@ -4,6 +4,23 @@ import { NatureFactory } from '../visuals/NatureFactory.js';
 import { BuildingFactory } from '../visuals/BuildingFactory.js';
 import { VFX } from '../visuals/VFX.js';
 
+export const WORLD_BOUNDS = Object.freeze({ minX: -17, maxX: 17, minZ: -13, maxZ: 13 });
+export const WORLD_COLLIDERS = Object.freeze([
+  { type: 'circle', x: 0, z: 0, radius: 1.5, id: 'plaza-fountain' },
+  { type: 'rect', x: 8.8, z: 7.4, width: 4.1, depth: 3.5, id: 'starter-house' },
+  { type: 'rect', x: -10, z: 0.6, width: 2.7, depth: 2, id: 'market-stall-coral' },
+  { type: 'rect', x: -7.25, z: 0.1, width: 2.7, depth: 2, id: 'market-stall-blue' },
+  { type: 'rect', x: -9.2, z: 4.1, width: 2.7, depth: 2, id: 'market-stall-yellow' },
+  { type: 'rect', x: 0.4, z: -7.1, width: 6.4, depth: 2.7, id: 'river-west' },
+  { type: 'rect', x: 9.2, z: -7.1, width: 5.1, depth: 2.7, id: 'river-east' },
+  { type: 'circle', x: 10.7, z: -8.5, radius: 2.35, id: 'garden-pond' },
+  { type: 'rect', x: -12.1, z: -4.6, width: 3.2, depth: 0.8, id: 'mosswood-gate' },
+  { type: 'rect', x: -2.6, z: 8.6, width: 3.2, depth: 0.8, id: 'sunmeadow-gate' },
+  { type: 'circle', x: -4.2, z: -7.8, radius: 1.25, id: 'heartroot' },
+  ...[[-15, 4, 0.55], [-13, 8, 0.6], [-8, 10, 0.5], [3, 11, 0.55], [12, 10, 0.5], [15, 4, 0.58], [15, -3, 0.55], [-15, -1, 0.5], [-10, -9, 0.55], [1, -11, 0.58]]
+    .map(([x, z, radius], index) => ({ type: 'circle', x, z, radius, id: `tree-${index + 1}` })),
+]);
+
 const box = (x, y, z) => new THREE.BoxGeometry(x, y, z);
 
 function roundedPatch(width, depth, material, x, z, y = 0.12) {

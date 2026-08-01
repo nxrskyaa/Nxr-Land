@@ -1,0 +1,37 @@
+{
+  "errors": [],
+  "ripeState": {
+    "id": "home-plot-1",
+    "state": "harvestable",
+    "cropId": "turnip",
+    "plantedAt": 450,
+    "wateredAt": 500,
+    "growthStartedAt": 500
+  },
+  "state": {
+    "inventory": {
+      "tool-hoe": 1,
+      "tool-watering-can": 1,
+      "tool-axe": 1,
+      "seed-turnip": 2,
+      "produce-turnip": 1
+    }
+  },
+  "mobileControls": {
+    "display": "flex",
+    "opacity": "1",
+    "joystick": "block",
+    "action": "grid"
+  },
+  "mobileHarvest": {
+    "plot": {
+      "id": "home-plot-1",
+      "state": "empty",
+      "cropId": null,
+      "plantedAt": null,
+      "wateredAt": null,
+      "growthStartedAt": null
+    },
+    "produce": 1
+  }
+}

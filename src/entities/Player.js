@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { CharacterFactory } from '../visuals/CharacterFactory.js';
 import { moveWithCollisions, validateSpawn } from '../game/Collision.js';
 
@@ -39,6 +40,19 @@ export function stepMotion(motion, input, delta, options = {}) {
   };
 }
 
+const TOOL_ACTION_DURATION = 0.55;
+
+export function stepToolAction(action, delta) {
+  if (!action) return null;
+  const elapsed = finite(action.elapsed) + Math.max(0, finite(delta));
+  if (elapsed >= TOOL_ACTION_DURATION) return null;
+  return {
+    type: action.type,
+    elapsed,
+    swing: Math.sin((elapsed / TOOL_ACTION_DURATION) * Math.PI),
+  };
+}
+
 export class Player {
   constructor({ scene, state, input, bounds, colliders, eventBus, saveManager, factory } = {}) {
     this.scene = scene;
@@ -57,6 +71,8 @@ export class Player {
     this.wasMoving = false;
     this.saveElapsed = 0;
     this.root = this.factory.create(state?.player?.appearance);
+    this.toolAction = null;
+    this.#attachToolCue();
     this.root.position.set(spawn.x, 0.72, spawn.z);
     this.root.scale.setScalar(0.92);
     scene?.add(this.root);
@@ -86,6 +102,15 @@ export class Player {
     }
     this.root.position.set(this.position.x, 0.72, this.position.z);
     this.factory.animate(this.root, finite(elapsed), speed);
+    this.toolAction = stepToolAction(this.toolAction, delta);
+    const rightArm = this.root.userData.parts?.rightArm;
+    if (this.toolAction) {
+      if (rightArm) rightArm.rotation.x -= this.toolAction.swing * 1.15;
+      if (this.toolCue) {
+        this.toolCue.visible = true;
+        this.toolCue.rotation.x = -0.55 - this.toolAction.swing * 0.9;
+      }
+    } else if (this.toolCue) this.toolCue.visible = false;
     this.#syncState();
 
     if (moving) {
@@ -116,14 +141,52 @@ export class Player {
     const nextAppearance = { ...this.state.player.appearance, ...appearance };
     if (syncState) this.state.player.appearance = nextAppearance;
     this.factory.updateAppearance(this.root, nextAppearance);
+    this.#attachToolCue();
+  }
+
+  #attachToolCue() {
+    this.toolCue?.removeFromParent();
+    if (!this.toolGeometry) {
+      this.toolGeometry = {
+        handle: new THREE.CylinderGeometry(0.025, 0.03, 0.72, 6),
+        head: new THREE.BoxGeometry(0.24, 0.1, 0.12),
+      };
+      this.toolMaterials = {
+        handle: new THREE.MeshStandardMaterial({ color: 0x8b6848, roughness: 0.9 }),
+        head: new THREE.MeshStandardMaterial({ color: 0x8fc4c8, roughness: 0.72 }),
+      };
+    }
+    const cue = new THREE.Group();
+    cue.name = 'Farming tool cue';
+    const handle = new THREE.Mesh(this.toolGeometry.handle, this.toolMaterials.handle);
+    const head = new THREE.Mesh(this.toolGeometry.head, this.toolMaterials.head);
+    head.position.y = -0.38;
+    cue.add(handle, head);
+    cue.position.set(0.62, 1.1, 0.18);
+    cue.rotation.z = -0.18;
+    cue.visible = false;
+    this.root.add(cue);
+    this.toolCue = cue;
+  }
+
+  playToolAction(type) {
+    this.toolAction = { type, elapsed: 0, swing: 0 };
+    if (this.toolMaterials?.head) {
+      this.toolMaterials.head.color.set(type === 'water' ? 0x76b6cf : type === 'harvest' ? 0xf2c85b : 0x9aa5a3);
+    }
   }
 
   dispose() {
     if (this.wasMoving) this.#save();
     this.root?.removeFromParent();
+    Object.values(this.toolGeometry ?? {}).forEach((geometry) => geometry.dispose());
+    Object.values(this.toolMaterials ?? {}).forEach((material) => material.dispose());
     if (this.ownsFactory) this.factory.dispose();
     this.root = null;
     this.scene = null;
     this.input = null;
+    this.toolCue = null;
+    this.toolGeometry = null;
+    this.toolMaterials = null;
   }
 }

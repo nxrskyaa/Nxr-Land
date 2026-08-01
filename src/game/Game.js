@@ -4,6 +4,8 @@ import { Input } from './Input.js';
 import { CameraController } from './Camera.js';
 import { Player } from '../entities/Player.js';
 import { CharacterCreator } from '../ui/CharacterCreator.js';
+import { TimeSystem } from '../systems/TimeSystem.js';
+import { FarmingSystem } from '../systems/FarmingSystem.js';
 
 const MAX_DELTA_SECONDS = 0.05;
 const WORLD_WIDTH = 40;
@@ -27,6 +29,56 @@ export function getOrthographicBounds(aspect = 1, worldWidth = WORLD_WIDTH, worl
   const halfHeight = Math.max(worldHeight * margin / 2, worldWidth * margin / (2 * safeAspect));
   const halfWidth = halfHeight * safeAspect;
   return { left: -halfWidth, right: halfWidth, top: halfHeight, bottom: -halfHeight };
+}
+
+export function findNearestPlot(position, plotPositions, radius = 1.65) {
+  if (!position || !Number.isFinite(position.x) || !Number.isFinite(position.z)) return null;
+  let nearest = null;
+  for (const [plotId, plotPosition] of Object.entries(plotPositions ?? {})) {
+    const distance = Math.hypot(position.x - plotPosition.x, position.z - plotPosition.z);
+    if (distance <= radius && (!nearest || distance < nearest.distance)) nearest = { plotId, position: plotPosition, distance };
+  }
+  return nearest;
+}
+
+export function choosePlotAction(plot, inventory = {}) {
+  if (plot?.state === 'empty') return { action: 'till', tool: 'tool-hoe' };
+  if (plot?.state === 'tilled') {
+    if ((inventory['seed-turnip'] ?? 0) > 0) return { action: 'plant', cropId: 'turnip' };
+    return { action: 'status', reason: 'no-seeds' };
+  }
+  if (plot?.state === 'planted') return { action: 'water', tool: 'tool-watering-can' };
+  if (plot?.state === 'harvestable') return { action: 'harvest' };
+  return { action: 'status' };
+}
+
+export function actionSuccessMessage(result = {}) {
+  if (result.action === 'till') return 'Soft soil, ready for a seed';
+  if (result.action === 'plant') return 'Cloud Turnip planted';
+  if (result.action === 'water') return 'Watered — this crop can grow now';
+  if (result.action === 'harvest') {
+    const item = typeof result.itemId === 'string'
+      ? result.itemId.replace('produce-', '')
+      : 'crop';
+    return `Harvested ${item}`;
+  }
+  return 'Garden updated';
+}
+
+export function saveBeforeDispose(saveManager, state) {
+  if (!saveManager?.save) return true;
+  try {
+    return saveManager.save(state) !== false;
+  } catch {
+    return false;
+  }
+}
+
+export function updateFarmingFrame({ timeSystem, farmingSystem, world } = {}, delta = 0) {
+  timeSystem?.update?.(delta);
+  const changes = farmingSystem?.updateGrowth?.() ?? [];
+  world?.syncFarmingPlots?.(farmingSystem);
+  return changes;
 }
 
 export class Game {
@@ -65,6 +117,11 @@ export class Game {
       this.camera.lookAt(0, 0, 0);
       this.#addLighting();
       this.world = new World(this.scene, { state });
+      this.timeSystem = new TimeSystem({ state, eventBus });
+      this.farmingSystem = new FarmingSystem({
+        state, eventBus, saveManager, plotPositions: this.world.getPlotPositions(),
+      });
+      this.world.syncFarmingPlots(this.farmingSystem);
       this.raycaster = new THREE.Raycaster();
       this.groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
       this.input = new Input({
@@ -154,14 +211,48 @@ export class Game {
 
   #handleAction() {
     this.eventBus?.emit?.('player:action', { position: { ...this.state.player.position } });
-    const feedback = this.container.querySelector('.action-feedback');
-    if (!feedback) return;
-    feedback.textContent = 'Nothing nearby — keep exploring';
-    feedback.classList.add('is-visible');
-    clearTimeout(this.actionFeedbackTimer);
-    this.actionFeedbackTimer = setTimeout(() => feedback.classList.remove('is-visible'), 1300);
+    const nearby = findNearestPlot(this.player?.position, this.world?.getPlotPositions());
+    let message = 'Nothing nearby — keep exploring';
+    if (nearby) {
+      const plot = this.state.crops.plots.find((entry) => entry.id === nearby.plotId);
+      const choice = choosePlotAction(plot, this.state.economy.inventory);
+      let result = null;
+      if (choice.action === 'till') result = this.farmingSystem.till(plot.id);
+      else if (choice.action === 'plant') result = this.farmingSystem.plant(plot.id, choice.cropId);
+      else if (choice.action === 'water') result = this.farmingSystem.water(plot.id);
+      else if (choice.action === 'harvest') {
+        result = this.farmingSystem.harvest(plot.id);
+        if (result.ok) this.world.burstHarvest(this.world.getPlotPositions()[plot.id]);
+      } else if (choice.reason === 'no-seeds') {
+        message = 'This bed is ready — find a turnip seed to plant';
+      } else {
+        const visual = this.farmingSystem.getVisualState(plot.id);
+        message = visual?.state === 'watered'
+          ? 'Water soaked in — growth begins now'
+          : `${visual?.stage ?? 'Crop'} growing — ${Math.round((visual?.progress ?? 0) * 100)}%`;
+      }
+      if (result) {
+        if (result.ok) {
+          message = actionSuccessMessage(result);
+          this.player?.playToolAction?.(result.action);
+          this.world.syncFarmingPlots(this.farmingSystem);
+        } else message = result.message;
+      }
+    }
+    this.#showActionFeedback(message);
   }
 
+  #showActionFeedback(message) {
+    const feedback = this.container.querySelector('.action-feedback');
+    if (!feedback) return;
+    feedback.textContent = message;
+    feedback.classList.add('is-visible');
+    if (this.feedbackTimer) clearTimeout(this.feedbackTimer);
+    this.feedbackTimer = setTimeout(() => {
+      feedback.classList.remove('is-visible');
+      this.feedbackTimer = null;
+    }, 1600);
+  }
   #observeResize() {
     this.boundResize = () => this.resize();
     window.addEventListener('resize', this.boundResize, { passive: true });
@@ -192,6 +283,7 @@ export class Game {
 
   update(delta, elapsed = this.elapsed) {
     const safeDelta = clampDelta(delta);
+    updateFarmingFrame(this, safeDelta);
     this.world?.update(safeDelta, elapsed);
     this.player?.update(safeDelta, elapsed);
     this.cameraController?.update(safeDelta);
@@ -234,6 +326,7 @@ export class Game {
 
   dispose() {
     if (this.disposed) return;
+    saveBeforeDispose(this.saveManager, this.state);
     this.disposed = true;
     this.stop();
     this.resizeObserver?.disconnect();
@@ -241,7 +334,7 @@ export class Game {
     if (this.renderer?.domElement && this.#handleContextLost) {
       this.renderer.domElement.removeEventListener('webglcontextlost', this.#handleContextLost);
     }
-    clearTimeout(this.actionFeedbackTimer);
+    if (this.feedbackTimer) clearTimeout(this.feedbackTimer);
     this.creator?.dispose();
     this.input?.dispose();
     this.cameraController?.dispose();

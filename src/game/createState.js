@@ -45,6 +45,7 @@ function createPlots() {
     cropId: null,
     plantedAt: null,
     wateredAt: null,
+    growthStartedAt: null,
   }));
 }
 
@@ -68,6 +69,7 @@ export function createInitialState() {
     world: {
       day: INITIAL_DAY,
       timeOfDayMs: INITIAL_TIME_OF_DAY_MS,
+      elapsedMs: 0,
       weather: 'clear',
       ownedLand: ['home-plot'],
       placedBuildings: [],

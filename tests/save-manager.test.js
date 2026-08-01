@@ -470,7 +470,9 @@ describe('SaveManager', () => {
     }));
     expect(migrated.world.day).toBe(37);
     expect(migrated.world).not.toHaveProperty('plots');
-    expect(migrated.crops.plots).toEqual(legacyPlots);
+    expect(migrated.crops.plots).toEqual([
+      { id: 'legacy-plot', state: 'harvestable', cropId: 'pumpkin' },
+    ]);
     expect(migrated.economy).toEqual(expect.objectContaining({
       coin: 1234,
       inventory: expect.objectContaining({ 'seed-pumpkin': 9 }),

@@ -1,7 +1,15 @@
-import { describe, expect, it } from 'vitest';
-import { clampDelta, getOrthographicBounds, getRenderMetrics } from '../src/game/Game.js';
+import { describe, expect, it, vi } from 'vitest';
+import { clampDelta, getOrthographicBounds, getRenderMetrics, saveBeforeDispose } from '../src/game/Game.js';
 
 describe('Game pure rendering helpers', () => {
+  it('persists authoritative foreground time before teardown', () => {
+    const state = { world: { elapsedMs: 12_345 } };
+    const saveManager = { save: vi.fn(() => true) };
+
+    expect(saveBeforeDispose(saveManager, state)).toBe(true);
+    expect(saveManager.save).toHaveBeenCalledWith(state);
+  });
+
   it('guards negative, invalid, and long-frame delta spikes', () => {
     expect(clampDelta(-1)).toBe(0);
     expect(clampDelta(Number.NaN)).toBe(0);

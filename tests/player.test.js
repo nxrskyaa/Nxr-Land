@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { stepMotion } from '../src/entities/Player.js';
+import { stepMotion, stepToolAction } from '../src/entities/Player.js';
 
 describe('player motion', () => {
   it('accelerates a simulated held-right player and changes authoritative x', () => {
@@ -19,5 +19,13 @@ describe('player motion', () => {
     const stopped = stepMotion(moving, { x: 0, z: 0 }, 1);
     expect(stopped.velocity.x).toBeLessThan(3);
     expect(stopped.position.x).toBeLessThan(1.3);
+  });
+
+  it('advances a finite tool action and settles back to rest', () => {
+    expect(stepToolAction(null, 0.1)).toBeNull();
+    const active = stepToolAction({ type: 'water', elapsed: 0 }, 0.1);
+    expect(active).toMatchObject({ type: 'water', elapsed: 0.1 });
+    expect(active.swing).toBeGreaterThan(0);
+    expect(stepToolAction(active, 1)).toBeNull();
   });
 });

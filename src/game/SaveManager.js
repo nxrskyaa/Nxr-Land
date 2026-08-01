@@ -15,7 +15,7 @@ const REQUIRED_SECTIONS = [
 ];
 
 const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
-const PLOT_STATES = new Set(['empty', 'planted', 'growing', 'ready', 'withered']);
+const PLOT_STATES = new Set(['empty', 'tilled', 'planted', 'watered', 'growing', 'harvestable']);
 const WARDROBE_SLOTS = ['hair', 'top', 'bottom', 'shoes', 'accessory'];
 const REWARD_KEYS = new Set(['coin', 'items']);
 
@@ -127,7 +127,8 @@ function isValidPlot(plot) {
     && PLOT_STATES.has(plot.state)
     && isNullableString(plot.cropId)
     && (plot.plantedAt === undefined || plot.plantedAt === null || Number.isFinite(plot.plantedAt))
-    && (plot.wateredAt === undefined || plot.wateredAt === null || Number.isFinite(plot.wateredAt));
+    && (plot.wateredAt === undefined || plot.wateredAt === null || Number.isFinite(plot.wateredAt))
+    && (plot.growthStartedAt === undefined || plot.growthStartedAt === null || Number.isFinite(plot.growthStartedAt));
 }
 
 function isValidReward(reward) {
@@ -167,6 +168,7 @@ function isValidState(state) {
     && ['x', 'y', 'z'].every((axis) => Number.isFinite(player.position[axis]))
     && Number.isInteger(world.day) && world.day > 0
     && Number.isFinite(world.timeOfDayMs)
+    && (world.elapsedMs === undefined || isFiniteNonnegative(world.elapsedMs))
     && typeof world.weather === 'string'
     && isStringArray(world.ownedLand)
     && Array.isArray(world.placedBuildings)
@@ -260,11 +262,18 @@ function migrateVersionZero(legacy, createInitialState) {
     totalMs: rewardTotalMs,
     ...cleanRewardPlaytime
   } = rewardPlaytime;
+  const migratedPlots = (legacyCrops.plots ?? worldPlots)?.map?.((plot) => ({
+    ...plot,
+    state: plot.state === 'ready' ? 'harvestable'
+      : plot.state === 'withered' ? 'empty'
+        : plot.state,
+    ...(plot.state === 'withered' ? {
+      cropId: null, plantedAt: null, wateredAt: null, growthStartedAt: null,
+    } : {}),
+  }));
   const crops = {
     ...legacyCrops,
-    ...(legacyCrops.plots === undefined && worldPlots !== undefined
-      ? { plots: worldPlots }
-      : {}),
+    ...(migratedPlots === undefined ? {} : { plots: migratedPlots }),
   };
   const playtime = {
     ...legacyPlaytime,

@@ -3,8 +3,17 @@ import { createMaterialLibrary, setSoftShadows } from '../visuals/materials.js';
 import { NatureFactory } from '../visuals/NatureFactory.js';
 import { BuildingFactory } from '../visuals/BuildingFactory.js';
 import { VFX } from '../visuals/VFX.js';
+import { CropFactory } from '../visuals/CropFactory.js';
 
 export const WORLD_BOUNDS = Object.freeze({ minX: -17, maxX: 17, minZ: -13, maxZ: 13 });
+export const FARM_PLOT_POSITIONS = Object.freeze({
+  'home-plot-1': Object.freeze({ x: 5.45, y: 0.26, z: 2.9 }),
+  'home-plot-2': Object.freeze({ x: 7, y: 0.26, z: 2.9 }),
+  'home-plot-3': Object.freeze({ x: 8.55, y: 0.26, z: 2.9 }),
+  'home-plot-4': Object.freeze({ x: 5.45, y: 0.26, z: 4.4 }),
+  'home-plot-5': Object.freeze({ x: 7, y: 0.26, z: 4.4 }),
+  'home-plot-6': Object.freeze({ x: 8.55, y: 0.26, z: 4.4 }),
+});
 export const WORLD_COLLIDERS = Object.freeze([
   { type: 'circle', x: 0, z: 0, radius: 1.5, id: 'plaza-fountain' },
   { type: 'rect', x: 8.8, z: 7.4, width: 4.1, depth: 3.5, id: 'starter-house' },
@@ -71,6 +80,8 @@ export class World {
     this.root.name = 'Nxr Land village';
     scene.add(this.root);
     this.vfx = new VFX(scene, this.materials);
+    this.cropFactory = new CropFactory({ scene: this.root, reducedMotion: state?.settings?.controls?.reducedMotion });
+    this.plotVisuals = new Map();
     this.#buildTerrain();
     this.#buildPlaza();
     this.#buildHomePlot();
@@ -135,18 +146,12 @@ export class World {
     const group = new THREE.Group();
     group.add(roundedPatch(8, 8.5, this.materials.grassLight, 8, 5.8, 0.12));
     group.add(this.buildings.starterHouse(8.8, 7.4));
-    for (let row = 0; row < 2; row += 1) {
-      for (let col = 0; col < 3; col += 1) {
-        const bed = new THREE.Mesh(box(1.35, 0.18, 1.25), this.materials.soil);
-        bed.position.set(5.45 + col * 1.55, 0.26, 2.9 + row * 1.5);
-        bed.rotation.y = -0.05;
-        group.add(bed);
-        for (let plant = 0; plant < 3; plant += 1) {
-          const sprout = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.42, 5), plant % 2 ? this.materials.leaf : this.materials.leafLight);
-          sprout.position.set(bed.position.x - 0.4 + plant * 0.4, 0.52, bed.position.z);
-          group.add(sprout);
-        }
-      }
+    for (const plot of this.state?.crops?.plots ?? []) {
+      const position = FARM_PLOT_POSITIONS[plot.id];
+      if (!position) continue;
+      const visual = this.cropFactory.create({ plotId: plot.id, position, state: plot.state });
+      visual.root.rotation.y = -0.05;
+      this.plotVisuals.set(plot.id, visual);
     }
     for (let i = 0; i < 5; i += 1) group.add(this.buildings.fenceSegment(5 + i * 1.45, 1.85));
     group.add(this.buildings.sign(4.5, 5.5, Math.PI / 2));
@@ -256,6 +261,25 @@ export class World {
   update(delta, elapsed) {
     this.nature.update(elapsed);
     this.vfx.update(delta, elapsed);
+    this.cropFactory.update(delta, elapsed);
+  }
+
+  getPlotPositions() {
+    return FARM_PLOT_POSITIONS;
+  }
+
+  syncFarmingPlots(farmingSystem) {
+    for (const [plotId, visual] of this.plotVisuals) {
+      const state = farmingSystem?.getVisualState?.(plotId);
+      if (!state) continue;
+      const data = visual.root?.userData ?? {};
+      if (data.state === state.state && data.cropId === state.cropId && data.stageIndex === state.stageIndex) continue;
+      this.cropFactory.sync(visual, state);
+    }
+  }
+
+  burstHarvest(position, color) {
+    return this.cropFactory.burstHarvest(position, color);
   }
 
   setLabelScale(multiplier = 1) {
@@ -270,6 +294,7 @@ export class World {
     if (this.disposed) return;
     this.disposed = true;
     this.vfx.dispose();
+    this.cropFactory.dispose();
     const geometries = new Set();
     const textures = new Set();
     const spriteMaterials = new Set();
@@ -285,5 +310,6 @@ export class World {
     this.materials.dispose();
     this.root.removeFromParent();
     this.landmarks.clear();
+    this.plotVisuals.clear();
   }
 }

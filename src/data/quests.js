@@ -1,4 +1,4 @@
-import { deepFreeze } from './crops.js';
+import { deepFreeze } from '../utils/deepFreeze.js';
 
 export const QUESTS = deepFreeze([
   {
@@ -33,7 +33,7 @@ export const QUESTS = deepFreeze([
     id: 'chapter-1-find-spirit-seed', chapter: 1, order: 5, title: 'Whisper by the River',
     objective: 'Find the Spirit Seed glowing in River Garden.', destination: 'River Garden',
     event: { type: 'item:collected', target: 'spirit-seed' },
-    progress: { metric: 'spiritSeedsFound', required: 1 }, reward: { coin: 40, items: { 'spirit-seed': 1 } },
+    progress: { metric: 'spiritSeedsFound', required: 1 }, reward: { coin: 40, items: { 'gacha-ticket': 1 } },
     dialogue: { start: ['Lumi heard a soft chime beyond the bridge.'], complete: ['This seed carries an old, warm heartbeat.'] },
   },
   {

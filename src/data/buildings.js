@@ -1,4 +1,4 @@
-import { deepFreeze } from './crops.js';
+import { deepFreeze } from '../utils/deepFreeze.js';
 
 export const BUILDINGS = deepFreeze([
   { id: 'building-village-planter', name: 'Village Planter', price: 60, size: { width: 2, depth: 1 }, type: 'civic', palette: { base: '#b98962', accent: '#77a96d', trim: '#ead39c' } },

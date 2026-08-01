@@ -1,4 +1,4 @@
-import { deepFreeze } from './crops.js';
+import { deepFreeze } from '../utils/deepFreeze.js';
 
 export const PETS = deepFreeze([
   {

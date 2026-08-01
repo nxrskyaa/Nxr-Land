@@ -1,8 +1,9 @@
-import { CROPS, deepFreeze } from './crops.js';
+import { CROPS } from './crops.js';
+import { deepFreeze } from '../utils/deepFreeze.js';
 
 export const TOOLS = deepFreeze([
-  { id: 'tool-hoe', label: 'Garden Hoe', type: 'tool', price: 0, action: 'till' },
-  { id: 'tool-watering-can', label: 'Watering Can', type: 'tool', price: 0, action: 'water' },
+  { id: 'tool-hoe', label: 'Garden Hoe', type: 'tool', price: 20, action: 'till' },
+  { id: 'tool-watering-can', label: 'Watering Can', type: 'tool', price: 25, action: 'water' },
   { id: 'tool-axe', label: 'Hand Axe', type: 'tool', price: 40, action: 'clear' },
 ]);
 
@@ -22,7 +23,16 @@ export const PRODUCE = deepFreeze(CROPS.map((crop) => ({
   sellPrice: crop.sellPrice,
 })));
 
-export const ITEMS = deepFreeze([...TOOLS, ...SEEDS, ...PRODUCE]);
+export const REWARD_ITEMS = deepFreeze([
+  { id: 'seed-pack', label: 'Garden Seed Pack', type: 'bundle', rarity: 'common', colors: ['#78b85a', '#f5eee3'] },
+  { id: 'wardrobe-ticket', label: 'Wardrobe Ticket', type: 'ticket', rarity: 'rare', colors: ['#d8b7ef', '#f6df79'] },
+  { id: 'pet-treat', label: 'Pet Treat', type: 'consumable', rarity: 'common', colors: ['#e4bd76', '#b46b58'] },
+  { id: 'gacha-ticket', label: 'Companion Wish Ticket', type: 'ticket', rarity: 'rare', colors: ['#9bc7d0', '#cfbce8'] },
+  { id: 'rare-chest', label: 'Rare Reward Chest', type: 'chest', rarity: 'rare', colors: ['#806caa', '#f2cc76'] },
+  { id: 'spirit-seed', label: 'Spirit Seed', type: 'quest-item', rarity: 'epic', colors: ['#fff0a8', '#a78dd1'] },
+]);
+
+export const ITEMS = deepFreeze([...TOOLS, ...SEEDS, ...PRODUCE, ...REWARD_ITEMS]);
 
 export const ITEM_BY_ID = deepFreeze(Object.fromEntries(ITEMS.map((item) => [item.id, item])));
 

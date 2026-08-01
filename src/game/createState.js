@@ -1,6 +1,11 @@
 import { QUESTS } from '../data/quests.js';
 
-const PLAYTIME_REWARDS = [
+const INITIAL_DAY = 1;
+const INITIAL_TIME_OF_DAY_MS = 28_800_000;
+const INITIAL_PLOT_COUNT = 6;
+const STARTING_COIN = 50;
+
+const INITIAL_PLAYTIME_REWARD_TRACK = [
   { minutes: 5, reward: { coin: 20, items: { 'seed-turnip': 2 } } },
   { minutes: 15, reward: { items: { 'wardrobe-ticket': 1 } } },
   { minutes: 30, reward: { coin: 35, items: { 'pet-treat': 1 } } },
@@ -8,7 +13,7 @@ const PLAYTIME_REWARDS = [
   { minutes: 60, reward: { items: { 'rare-chest': 1 } } },
 ];
 
-const DAILY_REWARDS = [
+const INITIAL_DAILY_REWARD_TRACK = [
   { day: 1, reward: { coin: 30 } },
   { day: 2, reward: { items: { 'seed-pack': 1 } } },
   { day: 3, reward: { items: { 'wardrobe-ticket': 1 } } },
@@ -18,8 +23,23 @@ const DAILY_REWARDS = [
   { day: 7, reward: { items: { 'rare-chest': 1 } } },
 ];
 
+function cloneReward(reward) {
+  return {
+    ...reward,
+    ...(reward.items ? { items: { ...reward.items } } : {}),
+  };
+}
+
+function cloneRewardTrack(track, includeClaimStatus = false) {
+  return track.map((entry) => ({
+    ...entry,
+    ...(includeClaimStatus ? { claimed: false } : {}),
+    reward: cloneReward(entry.reward),
+  }));
+}
+
 function createPlots() {
-  return Array.from({ length: 6 }, (_, index) => ({
+  return Array.from({ length: INITIAL_PLOT_COUNT }, (_, index) => ({
     id: `home-plot-${index + 1}`,
     state: 'empty',
     cropId: null,
@@ -41,8 +61,8 @@ export function createInitialState() {
       position: { x: 0, y: 0, z: 4 },
     },
     world: {
-      day: 1,
-      timeOfDayMs: 28_800_000,
+      day: INITIAL_DAY,
+      timeOfDayMs: INITIAL_TIME_OF_DAY_MS,
       weather: 'clear',
       ownedLand: ['home-plot'],
       placedBuildings: [],
@@ -52,7 +72,7 @@ export function createInitialState() {
       plots: createPlots(),
     },
     economy: {
-      coin: 50,
+      coin: STARTING_COIN,
       inventory: {
         'tool-hoe': 1,
         'tool-watering-can': 1,
@@ -91,25 +111,10 @@ export function createInitialState() {
         lastClaimDate: null,
         streak: 0,
         claimedDays: [],
-        track: DAILY_REWARDS.map((entry) => ({
-          ...entry,
-          reward: {
-            ...entry.reward,
-            ...(entry.reward.items ? { items: { ...entry.reward.items } } : {}),
-          },
-        })),
+        track: cloneRewardTrack(INITIAL_DAILY_REWARD_TRACK),
       },
       playtime: {
-        date: null,
-        activeMs: 0,
-        milestones: PLAYTIME_REWARDS.map((entry) => ({
-          ...entry,
-          claimed: false,
-          reward: {
-            ...entry.reward,
-            ...(entry.reward.items ? { items: { ...entry.reward.items } } : {}),
-          },
-        })),
+        milestones: cloneRewardTrack(INITIAL_PLAYTIME_REWARD_TRACK, true),
       },
     },
     gacha: {

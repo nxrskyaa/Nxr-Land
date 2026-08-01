@@ -28,6 +28,22 @@ describe('farming game helpers', () => {
     expect(choosePlotAction({ state: 'tilled' }, {})).toEqual({ action: 'status', reason: 'no-seeds' });
   });
 
+  it('honors explicit hotbar selection instead of silently using another tool or seed', () => {
+    const inventory = { 'tool-hoe': 1, 'tool-watering-can': 1, 'seed-turnip': 1, 'seed-carrot': 1 };
+    expect(choosePlotAction({ state: 'empty' }, inventory, 'seed-carrot'))
+      .toEqual({ action: 'status', reason: 'select-hoe' });
+    expect(choosePlotAction({ state: 'empty' }, inventory, 'tool-hoe'))
+      .toEqual({ action: 'till', tool: 'tool-hoe' });
+    expect(choosePlotAction({ state: 'tilled' }, inventory, 'seed-carrot'))
+      .toEqual({ action: 'plant', cropId: 'carrot' });
+    expect(choosePlotAction({ state: 'tilled' }, inventory, 'tool-hoe'))
+      .toEqual({ action: 'status', reason: 'select-seed' });
+    expect(choosePlotAction({ state: 'planted' }, inventory, 'tool-hoe'))
+      .toEqual({ action: 'status', reason: 'select-watering-can' });
+    expect(choosePlotAction({ state: 'planted' }, inventory, 'tool-watering-can'))
+      .toEqual({ action: 'water', tool: 'tool-watering-can' });
+  });
+
   it('advances authoritative time, growth, and visuals once per frame', () => {
     const timeSystem = { update: vi.fn(() => ({ ok: true })) };
     const farmingSystem = { updateGrowth: vi.fn(() => [{ ok: true }]) };

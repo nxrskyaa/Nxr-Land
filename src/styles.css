@@ -240,6 +240,49 @@ button { font: inherit; }
 }
 .action-feedback.is-visible { transform: translate(-50%, 0); opacity: 1; }
 
+/* Task 7 economy UI: lightweight game-native panels share the single authoritative state. */
+.game-panel, .hotbar-ui {
+  position: absolute;
+  z-index: 9;
+  color: #4d6153;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+.character-ready .game-panel, .character-ready .hotbar-ui { opacity: 1; pointer-events: auto; }
+.game-panel {
+  border: 1px solid rgb(255 255 255 / 62%);
+  border-radius: 1rem;
+  background: rgb(255 250 232 / 84%);
+  box-shadow: 0 .8rem 2rem rgb(46 72 57 / 16%);
+  backdrop-filter: blur(14px);
+}
+.inventory-ui { top: 6.1rem; right: clamp(1rem, 3vw, 2.2rem); width: min(13rem, calc(100vw - 2rem)); padding: .7rem; }
+.inventory-ui header { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .45rem; font-size: .72rem; font-weight: 850; text-transform: uppercase; }
+.inventory-ui header strong { color: #bd6e60; font-size: .68rem; }
+.inventory-list { display: grid; max-height: 8rem; gap: .25rem; overflow: auto; }
+.inventory-item { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .28rem .42rem; border-radius: .55rem; background: rgb(255 255 248 / 58%); font-size: .65rem; }
+.inventory-item b { min-width: 1.3rem; color: #b66c5f; text-align: right; }
+.panel-empty { margin: .35rem; color: #7d8b80; font-size: .65rem; text-align: center; }
+.shop-ui { top: 6.1rem; left: clamp(1rem, 3vw, 2.2rem); width: min(14rem, calc(100vw - 2rem)); overflow: hidden; }
+.shop-ui summary { padding: .68rem .8rem; color: #526759; cursor: pointer; font-size: .72rem; font-weight: 850; list-style-position: inside; text-transform: uppercase; }
+.shop-ui details[open] summary { border-bottom: 1px solid rgb(91 114 96 / 12%); }
+.shop-scroll { max-height: min(48vh, 22rem); padding: .65rem; overflow: auto; }
+.shop-scroll h2 { margin: .25rem 0 .38rem; color: #bd6e60; font-size: .58rem; letter-spacing: .09em; text-transform: uppercase; }
+.shop-scroll [data-shop-buy-list], .shop-scroll [data-shop-sell-list] { display: grid; gap: .28rem; }
+.shop-item { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: .5rem; padding: .42rem .5rem; border: 1px solid rgb(91 114 96 / 13%); border-radius: .6rem; color: #526359; background: rgb(255 255 248 / 64%); cursor: pointer; font-size: .62rem; text-align: left; }
+.shop-item small { color: #a9685d; font-size: .54rem; text-align: right; }
+.shop-item:disabled { cursor: default; opacity: .45; }
+[data-shop-status] { min-height: 1.2rem; margin: 0; padding: .25rem .7rem .55rem; color: #ad6358; font-size: .6rem; font-weight: 700; }
+.hotbar-ui { bottom: 3.3rem; left: 50%; display: flex; max-width: calc(100vw - 2rem); gap: .35rem; transform: translate(-50%, .4rem); }
+.character-ready .hotbar-ui { transform: translate(-50%, 0); }
+.hotbar-slot { position: relative; display: grid; width: 4rem; min-width: 0; height: 3.55rem; place-content: center; padding: .3rem; border: 1px solid rgb(255 255 255 / 62%); border-radius: .85rem; color: #526359; background: rgb(255 250 232 / 86%); box-shadow: 0 .55rem 1.3rem rgb(47 71 57 / 18%); cursor: pointer; backdrop-filter: blur(12px); }
+.hotbar-slot[aria-pressed="true"] { border-color: #d47764; background: #fff8e6; box-shadow: 0 0 0 2px rgb(212 119 100 / 23%), 0 .65rem 1.4rem rgb(47 71 57 / 20%); transform: translateY(-.18rem); }
+.hotbar-slot span { max-width: 3.3rem; overflow: hidden; font-size: .52rem; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+.hotbar-slot kbd { position: absolute; top: .22rem; left: .3rem; color: #9a7b6c; font: 700 .5rem/1 system-ui; }
+.hotbar-slot b { position: absolute; right: .28rem; bottom: .2rem; color: #bd6e60; font-size: .58rem; }
+.shop-item:focus-visible, .hotbar-slot:focus-visible, .shop-ui summary:focus-visible { outline: 3px solid rgb(230 155 87 / 74%); outline-offset: 2px; }
+
 @keyframes creator-arrive { from { transform: translateY(1rem) scale(.985); opacity: 0; } }
 
 .has-fatal-error { display: grid; place-items: center; padding: 1.5rem; background: radial-gradient(circle at 50% 30%, #d9eac2, #8cb3a3); }
@@ -352,6 +395,15 @@ button { font: inherit; }
   .action-button small { margin-top: .28rem; font-size: .48rem; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
   .action-button:active { transform: translateY(2px) scale(.97); }
   .action-feedback { bottom: calc(7.8rem + env(safe-area-inset-bottom)); max-width: calc(100% - 2rem); overflow: hidden; text-overflow: ellipsis; }
+  .character-ready .village-brand { opacity: 0; pointer-events: none; }
+  .inventory-ui { top: max(.65rem, env(safe-area-inset-top)); right: max(.65rem, env(safe-area-inset-right)); width: 9.75rem; }
+  .inventory-list { max-height: 4.7rem; }
+  .shop-ui { top: max(.65rem, env(safe-area-inset-top)); left: max(.65rem, env(safe-area-inset-left)); width: 8rem; }
+  .shop-ui summary { padding: .55rem .6rem; font-size: .58rem; }
+  .hotbar-ui { bottom: calc(6.35rem + env(safe-area-inset-bottom)); width: min(18rem, calc(100vw - 1.3rem)); gap: .22rem; overflow-x: auto; scrollbar-width: none; }
+  .hotbar-slot { flex: 0 0 3rem; width: 3rem; height: 3rem; }
+  .hotbar-slot span { max-width: 2.45rem; font-size: .46rem; }
+  .action-feedback { bottom: calc(10.2rem + env(safe-area-inset-bottom)); }
 }
 
 @media (max-height: 620px) and (min-width: 761px) {

@@ -80,6 +80,7 @@ export function createInitialState() {
     },
     economy: {
       coin: STARTING_COIN,
+      selectedHotbarId: 'tool-hoe',
       inventory: {
         'tool-hoe': 1,
         'tool-watering-can': 1,

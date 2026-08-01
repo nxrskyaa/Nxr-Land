@@ -6,6 +6,10 @@ import { Player } from '../entities/Player.js';
 import { CharacterCreator } from '../ui/CharacterCreator.js';
 import { TimeSystem } from '../systems/TimeSystem.js';
 import { FarmingSystem } from '../systems/FarmingSystem.js';
+import { EconomySystem } from '../systems/EconomySystem.js';
+import { InventoryUI } from '../ui/InventoryUI.js';
+import { ShopUI } from '../ui/ShopUI.js';
+import { HotbarUI } from '../ui/HotbarUI.js';
 
 const MAX_DELTA_SECONDS = 0.05;
 const WORLD_WIDTH = 40;
@@ -41,13 +45,31 @@ export function findNearestPlot(position, plotPositions, radius = 1.65) {
   return nearest;
 }
 
-export function choosePlotAction(plot, inventory = {}) {
-  if (plot?.state === 'empty') return { action: 'till', tool: 'tool-hoe' };
+export function choosePlotAction(plot, inventory = {}, selectedHotbarId = null) {
+  const explicitSelection = typeof selectedHotbarId === 'string';
+  if (plot?.state === 'empty') {
+    if (explicitSelection && selectedHotbarId !== 'tool-hoe') {
+      return { action: 'status', reason: 'select-hoe' };
+    }
+    return { action: 'till', tool: 'tool-hoe' };
+  }
   if (plot?.state === 'tilled') {
+    const selectedCropId = selectedHotbarId?.startsWith?.('seed-')
+      ? selectedHotbarId.slice('seed-'.length)
+      : null;
+    if (selectedCropId && (inventory[selectedHotbarId] ?? 0) > 0) {
+      return { action: 'plant', cropId: selectedCropId };
+    }
+    if (explicitSelection) return { action: 'status', reason: 'select-seed' };
     if ((inventory['seed-turnip'] ?? 0) > 0) return { action: 'plant', cropId: 'turnip' };
     return { action: 'status', reason: 'no-seeds' };
   }
-  if (plot?.state === 'planted') return { action: 'water', tool: 'tool-watering-can' };
+  if (plot?.state === 'planted') {
+    if (explicitSelection && selectedHotbarId !== 'tool-watering-can') {
+      return { action: 'status', reason: 'select-watering-can' };
+    }
+    return { action: 'water', tool: 'tool-watering-can' };
+  }
   if (plot?.state === 'harvestable') return { action: 'harvest' };
   return { action: 'status' };
 }
@@ -120,6 +142,14 @@ export class Game {
       this.timeSystem = new TimeSystem({ state, eventBus });
       this.farmingSystem = new FarmingSystem({
         state, eventBus, saveManager, plotPositions: this.world.getPlotPositions(),
+      });
+      this.economySystem = new EconomySystem({ state, eventBus, saveManager });
+      this.inventoryUI = new InventoryUI({ container: this.container, state, eventBus });
+      this.shopUI = new ShopUI({
+        container: this.container, state, eventBus, economySystem: this.economySystem,
+      });
+      this.hotbarUI = new HotbarUI({
+        container: this.container, state, eventBus, economySystem: this.economySystem,
       });
       this.world.syncFarmingPlots(this.farmingSystem);
       this.raycaster = new THREE.Raycaster();
@@ -215,7 +245,11 @@ export class Game {
     let message = 'Nothing nearby — keep exploring';
     if (nearby) {
       const plot = this.state.crops.plots.find((entry) => entry.id === nearby.plotId);
-      const choice = choosePlotAction(plot, this.state.economy.inventory);
+      const choice = choosePlotAction(
+        plot,
+        this.state.economy.inventory,
+        this.economySystem?.getSelectedHotbarItem(),
+      );
       let result = null;
       if (choice.action === 'till') result = this.farmingSystem.till(plot.id);
       else if (choice.action === 'plant') result = this.farmingSystem.plant(plot.id, choice.cropId);
@@ -224,7 +258,13 @@ export class Game {
         result = this.farmingSystem.harvest(plot.id);
         if (result.ok) this.world.burstHarvest(this.world.getPlotPositions()[plot.id]);
       } else if (choice.reason === 'no-seeds') {
-        message = 'This bed is ready — find a turnip seed to plant';
+        message = 'This bed is ready — find a seed to plant';
+      } else if (choice.reason === 'select-hoe') {
+        message = 'Select the Garden Hoe to till this bed';
+      } else if (choice.reason === 'select-seed') {
+        message = 'Select a seed from the hotbar to plant it';
+      } else if (choice.reason === 'select-watering-can') {
+        message = 'Select the Watering Can to water this crop';
       } else {
         const visual = this.farmingSystem.getVisualState(plot.id);
         message = visual?.state === 'watered'
@@ -336,6 +376,9 @@ export class Game {
     }
     if (this.feedbackTimer) clearTimeout(this.feedbackTimer);
     this.creator?.dispose();
+    this.inventoryUI?.dispose();
+    this.shopUI?.dispose();
+    this.hotbarUI?.dispose();
     this.input?.dispose();
     this.cameraController?.dispose();
     this.player?.dispose();
@@ -346,6 +389,10 @@ export class Game {
     this.player = null;
     this.input = null;
     this.creator = null;
+    this.inventoryUI = null;
+    this.shopUI = null;
+    this.hotbarUI = null;
+    this.economySystem = null;
     this.cameraController = null;
     this.renderer = null;
     this.scene = null;

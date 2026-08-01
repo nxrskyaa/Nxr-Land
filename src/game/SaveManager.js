@@ -177,6 +177,7 @@ function isValidState(state) {
     && isPositiveInteger(world.upgrades.houseLevel)
     && Array.isArray(crops.plots) && crops.plots.every(isValidPlot)
     && isFiniteNonnegative(economy.coin)
+    && (economy.selectedHotbarId === undefined || isNonEmptyString(economy.selectedHotbarId))
     && isQuantityMap(economy.inventory, true, true)
     && isStringArray(collection.pets, true)
     && isStringArray(collection.wardrobe, true)

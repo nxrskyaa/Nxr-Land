@@ -1,0 +1,43 @@
+{
+  "ok": true,
+  "afterBuy": {
+    "coin": 42,
+    "seeds": 4
+  },
+  "afterWater": {
+    "plot": {
+      "id": "home-plot-1",
+      "state": "growing",
+      "cropId": "turnip",
+      "plantedAt": 2450,
+      "wateredAt": 2750,
+      "growthStartedAt": 2750
+    },
+    "seeds": 3,
+    "selected": "tool-watering-can"
+  },
+  "finalState": {
+    "coin": 60,
+    "seeds": 3,
+    "produce": 0,
+    "plot": {
+      "id": "home-plot-1",
+      "state": "empty",
+      "cropId": null,
+      "plantedAt": null,
+      "wateredAt": null,
+      "growthStartedAt": null
+    },
+    "selected": "tool-watering-can"
+  },
+  "mobileUI": {
+    "inventory": "block",
+    "market": "block",
+    "hotbar": "flex",
+    "hotbarSlots": 4,
+    "action": "grid",
+    "joystick": "block",
+    "bodyOverflowX": false
+  },
+  "errors": []
+}

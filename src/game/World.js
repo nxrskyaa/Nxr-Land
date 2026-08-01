@@ -106,7 +106,13 @@ export class World {
   }
 
   #buildTerrain() {
-    const underlay = new THREE.Mesh(new THREE.CylinderGeometry(18.8, 19.7, 2.2, 48), this.materials.pathEdge);
+    // Layered floating-island base: soil cliff, grassy top, and a soft rim of
+    // lighter grass so the diorama reads as a hand-crafted little world.
+    const cliff = new THREE.Mesh(new THREE.CylinderGeometry(18.4, 19.9, 2.6, 48), this.materials.soilDark);
+    cliff.position.y = -1.35;
+    cliff.scale.z = 0.74;
+    cliff.receiveShadow = true;
+    const underlay = new THREE.Mesh(new THREE.CylinderGeometry(18.8, 19.4, 2.2, 48), this.materials.pathEdge);
     underlay.position.y = -1.05;
     underlay.scale.z = 0.74;
     underlay.receiveShadow = true;
@@ -114,31 +120,65 @@ export class World {
     island.position.y = -0.34;
     island.scale.z = 0.74;
     island.receiveShadow = true;
-    this.root.add(underlay, island);
+    // A gently raised inner meadow of lighter grass for tonal depth.
+    const meadow = new THREE.Mesh(new THREE.CylinderGeometry(15.6, 16.4, 0.5, 44), this.materials.grassLight);
+    meadow.position.y = 0.06;
+    meadow.scale.z = 0.74;
+    meadow.receiveShadow = true;
+    this.root.add(cliff, underlay, island, meadow);
 
     const plazaPath = roundedPatch(7.8, 7.8, this.materials.path, 0, 0, 0.1);
+    const plazaTrim = roundedPatch(8.5, 8.5, this.materials.pathEdge, 0, 0, 0.085);
     const marketPath = roundedPatch(12, 3.2, this.materials.path, -8.2, 1.8, 0.11);
     marketPath.rotation.y = -0.16;
     const homePath = roundedPatch(4.2, 10, this.materials.path, 6.2, 4.2, 0.105);
     homePath.rotation.y = 0.32;
-    this.root.add(plazaPath, marketPath, homePath);
+    this.root.add(plazaTrim, plazaPath, marketPath, homePath);
+
+    // Warm stepping-stones knitting the plaza to the home and market lanes.
+    const stones = [[3, 0.4], [3.9, 1.4], [4.7, 2.5], [-3, 0.6], [-4, 1.1], [-5, 1.6]];
+    stones.forEach(([sx, sz], i) => {
+      const stone = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.5, 0.12, 10), this.materials.stoneWarm);
+      stone.position.set(sx, 0.12, sz);
+      stone.rotation.y = i;
+      stone.receiveShadow = true;
+      this.root.add(stone);
+    });
   }
 
   #buildPlaza() {
     const group = new THREE.Group();
     const center = roundedPatch(5.8, 5.8, this.materials.pathEdge, 0, 0, 0.18);
-    group.add(center);
-    const fountainBase = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.55, 0.55, 16), this.materials.stone);
+    const centerInlay = roundedPatch(4.6, 4.6, this.materials.stoneWarm, 0, 0, 0.2);
+    group.add(center, centerInlay);
+    // Tiered fountain: stone base, a warm mid basin, brimming water, and a spout.
+    const fountainBase = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.55, 0.55, 20), this.materials.stone);
     fountainBase.position.y = 0.48;
+    const fountainMid = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 1.15, 0.4, 18), this.materials.stoneWarm);
+    fountainMid.position.y = 0.95;
     const water = new THREE.Mesh(new THREE.CylinderGeometry(1.08, 1.08, 0.08, 24), this.materials.waterLight);
     water.position.y = 0.79;
     water.userData.baseY = water.position.y;
-    const fountainTop = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 8), this.materials.water);
-    fountainTop.position.y = 1.38;
-    group.add(fountainBase, water, fountainTop);
+    const upperWater = new THREE.Mesh(new THREE.CylinderGeometry(0.82, 0.82, 0.07, 22), this.materials.water);
+    upperWater.position.y = 1.16;
+    const spout = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 0.7, 12), this.materials.stoneWarm);
+    spout.position.y = 1.42;
+    const fountainTop = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 8), this.materials.water);
+    fountainTop.position.y = 1.85;
+    group.add(fountainBase, fountainMid, water, upperWater, spout, fountainTop);
     this.vfx.registerWater(water);
     [[-2.2, 1.7, 0.55], [2.15, -1.75, -2.55]].forEach(([x, z, r]) => group.add(this.buildings.bench(x, z, r)));
     [[-2.7, -2.1], [2.6, 2.15]].forEach(([x, z]) => group.add(this.buildings.lamp(x, z)));
+    // Potted blossoms framing the fountain corners for a welcoming feel.
+    [[-2.6, 2.3], [2.5, -2.4], [2.6, 2.4], [-2.5, -2.3]].forEach(([x, z], i) => {
+      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.3, 0.4, 10), this.materials.coral);
+      pot.position.set(x, 0.4, z);
+      group.add(pot);
+      const bush = new THREE.Mesh(new THREE.IcosahedronGeometry(0.32, 1), i % 2 ? this.materials.blossom : this.materials.leafLight);
+      bush.position.set(x, 0.78, z);
+      bush.scale.set(1, 0.9, 1);
+      group.add(bush);
+    });
     this.#register('Town Plaza', setSoftShadows(group), [0, 3.1, 3.35]);
   }
 
@@ -247,15 +287,31 @@ export class World {
   #scatterDetails() {
     const treePoints = [[-15, 4, 1.2], [-13, 8, 1.3], [-8, 10, 1.05], [3, 11, 1.2], [12, 10, 1], [15, 4, 1.25], [15, -3, 1.15], [-15, -1, 1], [-10, -9, 1.15], [1, -11, 1.25]];
     treePoints.forEach(([x, z, s], i) => this.root.add(this.nature.tree(x, z, s, i % 3 === 0)));
+    // Companion saplings clustered beside the big trees for a layered treeline.
+    treePoints.forEach(([x, z, s], i) => {
+      if (i % 2 !== 0) return;
+      const ox = Math.cos(i) * 1.4;
+      const oz = Math.sin(i) * 1.2;
+      this.root.add(this.nature.tree(x + ox, z + oz, s * 0.55, (i + 1) % 3 === 0));
+    });
     [[-3.5, 5], [3.8, 5.8], [-5, -1.8], [1.8, -4.2], [13, 1], [-12, 5.7]].forEach(([x, z], i) => this.root.add(this.nature.rock(x, z, 0.45 + (i % 3) * 0.12)));
-    const grass = Array.from({ length: 58 }, (_, i) => {
+    // Cozy shrub clusters tucked around the meadow edges.
+    [[-6.5, 6.5], [-6, 7.2], [4.5, -2], [14, 6.5], [-14, 1.5], [11, 3.5]].forEach(([x, z], i) => this.root.add(this.nature.shrub(x, z, 0.7 + (i % 3) * 0.1)));
+    const grass = Array.from({ length: 84 }, (_, i) => {
       const angle = i * 2.399;
-      const radius = 7 + (i % 9) * 1.05;
-      return [Math.cos(angle) * radius, Math.sin(angle) * radius * 0.72, 0.65 + (i % 4) * 0.11];
+      const radius = 6.5 + (i % 11) * 1.0;
+      return [Math.cos(angle) * radius, Math.sin(angle) * radius * 0.72, 0.6 + (i % 4) * 0.12];
     });
     this.root.add(this.nature.createGrassInstances(grass));
-    const flowers = Array.from({ length: 36 }, (_, i) => [-13 + (i * 4.7) % 26, -9 + (i * 3.1) % 18, 0.7 + (i % 3) * 0.13]);
+    // Two flower beds: a mixed wildflower spread plus warm-toned garden clumps.
+    const flowers = Array.from({ length: 54 }, (_, i) => [-13 + (i * 4.7) % 26, -9 + (i * 3.1) % 18, 0.65 + (i % 3) * 0.14]);
     this.root.add(this.nature.createFlowerInstances(flowers));
+    const violets = Array.from({ length: 20 }, (_, i) => {
+      const angle = i * 1.7;
+      const radius = 9 + (i % 5) * 0.9;
+      return [Math.cos(angle) * radius, Math.sin(angle) * radius * 0.68, 0.7 + (i % 3) * 0.12];
+    });
+    this.root.add(this.nature.createFlowerInstances(violets, this.materials.flowerViolet));
   }
 
   update(delta, elapsed) {

@@ -32,6 +32,18 @@ export const CHARACTER_OPTIONS = Object.freeze({
     { value: '#8d684d', label: 'Work trousers' },
     { value: '#547d62', label: 'Fern overalls' },
   ],
+  shoes: [
+    { value: '#5a4038', label: 'Cocoa boots' },
+    { value: '#31586b', label: 'Rain boots' },
+    { value: '#8b4f55', label: 'Berry shoes' },
+    { value: '#65734b', label: 'Moss clogs' },
+  ],
+  accessories: [
+    { value: 'none', label: 'None' },
+    { value: 'leaf-pin', label: 'Leaf pin' },
+    { value: 'flower-clip', label: 'Flower clip' },
+    { value: 'round-glasses', label: 'Round glasses' },
+  ],
 });
 
 export const DEFAULT_APPEARANCE = Object.freeze({
@@ -50,6 +62,8 @@ const OPTION_KEYS = Object.freeze({
   hairColor: 'hairColors',
   top: 'tops',
   bottom: 'bottoms',
+  shoes: 'shoes',
+  accessory: 'accessories',
 });
 
 function catalogValue(key, value) {
@@ -62,10 +76,6 @@ function normalizeStyle(style = '') {
   return catalogValue('hairStyle', clean);
 }
 
-function safeColor(value, fallback) {
-  return /^#[\da-f]{6}$/i.test(String(value)) ? String(value) : fallback;
-}
-
 export function normalizeAppearance(appearance = {}) {
   return {
     skinTone: catalogValue('skinTone', appearance.skinTone),
@@ -73,8 +83,8 @@ export function normalizeAppearance(appearance = {}) {
     hairColor: catalogValue('hairColor', appearance.hairColor),
     top: catalogValue('top', appearance.top),
     bottom: catalogValue('bottom', appearance.bottom),
-    shoes: safeColor(appearance.shoes, DEFAULT_APPEARANCE.shoes),
-    accessory: appearance.accessory === 'none' ? 'none' : DEFAULT_APPEARANCE.accessory,
+    shoes: catalogValue('shoes', appearance.shoes),
+    accessory: catalogValue('accessory', appearance.accessory),
   };
 }
 
@@ -93,6 +103,8 @@ export class CharacterFactory {
       bun: new THREE.SphereGeometry(0.27, 12, 9),
       leaf: new THREE.ConeGeometry(0.11, 0.28, 5),
       collar: new THREE.TorusGeometry(0.28, 0.035, 6, 16, Math.PI),
+      glassesRim: new THREE.TorusGeometry(0.16, 0.025, 6, 18),
+      glassesBridge: new THREE.BoxGeometry(0.16, 0.025, 0.025),
     };
     this.characters = new Set();
     this.disposed = false;
@@ -175,13 +187,39 @@ export class CharacterFactory {
     hairGroup.children[0].castShadow = true;
 
     character.add(body, head, collar, ...eyes, ...cheeks, leftArm, rightArm, leftLeg, rightLeg, hairGroup);
-    if (look.accessory !== 'none') {
+    this.#accessory(look.accessory, character, { dark, leaf });
+    character.userData.parts = { body, head, leftArm, rightArm, leftLeg, rightLeg };
+  }
+
+  #accessory(accessory, character, { dark, leaf }) {
+    if (accessory === 'leaf-pin') {
       const pin = this.#mesh(this.geometries.leaf, leaf, 'Leaf pin');
       pin.position.set(0.38, 2.32, 0.45);
       pin.rotation.set(1.2, 0.25, -0.7);
       character.add(pin);
+    } else if (accessory === 'flower-clip') {
+      const petals = this.#material('#e9878a');
+      const center = this.#mesh(this.geometries.eye, this.#material('#f4c85f'), 'Flower center');
+      center.position.set(0.43, 2.35, 0.5);
+      center.scale.setScalar(1.3);
+      character.add(center);
+      for (let index = 0; index < 5; index += 1) {
+        const angle = (index / 5) * Math.PI * 2;
+        const petal = this.#mesh(this.geometries.curl, petals, index === 0 ? 'Flower clip' : 'Flower petal');
+        petal.position.set(0.43 + Math.cos(angle) * 0.12, 2.35 + Math.sin(angle) * 0.12, 0.475);
+        petal.scale.set(0.48, 0.72, 0.28);
+        character.add(petal);
+      }
+    } else if (accessory === 'round-glasses') {
+      [-0.21, 0.21].forEach((x, index) => {
+        const rim = this.#mesh(this.geometries.glassesRim, dark, index === 0 ? 'Left glasses rim' : 'Right glasses rim');
+        rim.position.set(x, 2, 0.61);
+        character.add(rim);
+      });
+      const bridge = this.#mesh(this.geometries.glassesBridge, dark, 'Glasses bridge');
+      bridge.position.set(0, 2, 0.61);
+      character.add(bridge);
     }
-    character.userData.parts = { body, head, leftArm, rightArm, leftLeg, rightLeg };
   }
 
   #limbPivot(x, y, skin, sleeve, name) {

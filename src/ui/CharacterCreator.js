@@ -18,6 +18,7 @@ function optionButtons(doc, group, selected) {
     button.dataset.group = group;
     button.setAttribute('role', 'radio');
     button.setAttribute('aria-checked', String(value === selected));
+    button.tabIndex = value === selected ? 0 : -1;
     button.title = label;
     if (value.startsWith('#')) {
       const swatch = doc.createElement('span');
@@ -42,11 +43,6 @@ export class CharacterCreator {
     this.saveManager = saveManager;
     this.onComplete = onComplete;
     this.appearance = normalizeAppearance(state?.player?.appearance);
-    this.originalPlayer = state?.player ? {
-      name: state.player.name,
-      appearance: { ...state.player.appearance },
-      creatorComplete: state.player.creatorComplete,
-    } : null;
     this.confirming = false;
     this.previousFocus = container?.ownerDocument?.activeElement;
     this.#render();
@@ -73,11 +69,13 @@ export class CharacterCreator {
         </div>
         <form class="creator-form">
           <label class="name-field">Gardener name<input name="playerName" maxlength="20" autocomplete="nickname" /></label>
-          <fieldset><legend>Skin tone</legend><div class="choice-row choice-row--swatches" role="radiogroup" data-options="skinTones"></div></fieldset>
-          <fieldset><legend>Hair style</legend><div class="choice-row" role="radiogroup" data-options="hairStyles"></div></fieldset>
-          <fieldset><legend>Hair color</legend><div class="choice-row choice-row--swatches" role="radiogroup" data-options="hairColors"></div></fieldset>
-          <fieldset><legend>Favorite top</legend><div class="choice-row choice-row--swatches" role="radiogroup" data-options="tops"></div></fieldset>
-          <fieldset><legend>Bottoms</legend><div class="choice-row choice-row--swatches" role="radiogroup" data-options="bottoms"></div></fieldset>
+          <fieldset><legend>Skin tone</legend><div class="choice-row choice-row--swatches" role="radiogroup" aria-label="Skin tone" data-options="skinTones"></div></fieldset>
+          <fieldset><legend>Hair style</legend><div class="choice-row" role="radiogroup" aria-label="Hair style" data-options="hairStyles"></div></fieldset>
+          <fieldset><legend>Hair color</legend><div class="choice-row choice-row--swatches" role="radiogroup" aria-label="Hair color" data-options="hairColors"></div></fieldset>
+          <fieldset><legend>Favorite top</legend><div class="choice-row choice-row--swatches" role="radiogroup" aria-label="Favorite top" data-options="tops"></div></fieldset>
+          <fieldset><legend>Bottoms</legend><div class="choice-row choice-row--swatches" role="radiogroup" aria-label="Bottoms" data-options="bottoms"></div></fieldset>
+          <fieldset><legend>Shoes</legend><div class="choice-row choice-row--swatches" role="radiogroup" aria-label="Shoes" data-options="shoes"></div></fieldset>
+          <fieldset><legend>Accessory</legend><div class="choice-row choice-row--accessories" role="radiogroup" aria-label="Accessory" data-options="accessories"></div></fieldset>
           <button class="creator-confirm" type="submit">Step into Nxr Land <span aria-hidden="true">→</span></button>
           <p class="creator-status" role="status" aria-live="polite"></p>
         </form>
@@ -88,6 +86,7 @@ export class CharacterCreator {
     this.element = overlay;
     const mappings = {
       skinTones: 'skinTone', hairStyles: 'hairStyle', hairColors: 'hairColor', tops: 'top', bottoms: 'bottom',
+      shoes: 'shoes', accessories: 'accessory',
     };
     Object.entries(mappings).forEach(([group, appearanceKey]) => {
       const holder = overlay.querySelector(`[data-options="${group}"]`);
@@ -96,7 +95,10 @@ export class CharacterCreator {
         const choice = event.target.closest('[data-value]');
         if (!choice) return;
         this.appearance[appearanceKey] = choice.dataset.value;
-        holder.querySelectorAll('[role="radio"]').forEach((button) => button.setAttribute('aria-checked', String(button === choice)));
+        holder.querySelectorAll('[role="radio"]').forEach((button) => {
+          button.setAttribute('aria-checked', String(button === choice));
+          button.tabIndex = button === choice ? 0 : -1;
+        });
         this.player?.updateAppearance(this.appearance, { syncState: false });
       });
       this.#listen(holder, 'keydown', (event) => {
@@ -140,27 +142,43 @@ export class CharacterCreator {
     this.confirming = true;
     const button = this.element.querySelector('.creator-confirm');
     const status = this.element.querySelector('.creator-status');
+    const originalPlayer = {
+      name: this.state.player.name,
+      appearance: { ...this.state.player.appearance },
+      creatorComplete: this.state.player.creatorComplete,
+    };
     if (button) button.disabled = true;
-    if (status) status.textContent = 'Saving your gardener…';
+    if (status) {
+      status.setAttribute('role', 'status');
+      status.textContent = 'Saving your gardener…';
+    }
     const name = sanitizePlayerName(this.nameInput.value);
     const appearance = normalizeAppearance(this.appearance);
     this.state.player.name = name;
     this.state.player.appearance = { ...this.state.player.appearance, ...appearance };
     this.state.player.creatorComplete = true;
     this.player?.updateAppearance(appearance, { syncState: false });
-    const saved = this.saveManager?.save?.(this.state) === true;
+    let saved = false;
+    try {
+      saved = this.saveManager?.save?.(this.state) === true;
+    } catch {
+      saved = false;
+    }
     if (!saved) {
-      if (this.originalPlayer) {
-        this.state.player.name = this.originalPlayer.name;
-        this.state.player.appearance = { ...this.originalPlayer.appearance };
-        this.state.player.creatorComplete = this.originalPlayer.creatorComplete;
-      }
+      this.state.player.name = originalPlayer.name;
+      this.state.player.appearance = { ...originalPlayer.appearance };
+      this.state.player.creatorComplete = originalPlayer.creatorComplete;
+      this.player?.updateAppearance(originalPlayer.appearance, { syncState: false });
       this.confirming = false;
       if (button) button.disabled = false;
-      if (status) status.textContent = 'We could not save yet. Please try again.';
+      if (status) {
+        status.setAttribute('role', 'alert');
+        status.textContent = 'We could not save yet. Please try again.';
+      }
       this.nameInput?.focus();
       return false;
     }
+    if (status) status.textContent = '';
     this.eventBus?.emit?.('character:created', { name, appearance: { ...appearance } });
     const CustomEventClass = this.container?.ownerDocument?.defaultView?.CustomEvent ?? globalThis.CustomEvent;
     if (CustomEventClass) {

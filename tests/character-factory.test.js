@@ -6,6 +6,28 @@ function mesh(character, name) {
 }
 
 describe('CharacterFactory', () => {
+  it('renders every accessory as a distinct code-generated look', () => {
+    const factory = new CharacterFactory();
+    const expectedParts = {
+      none: [],
+      'leaf-pin': ['Leaf pin'],
+      'flower-clip': ['Flower clip', 'Flower center'],
+      'round-glasses': ['Left glasses rim', 'Right glasses rim', 'Glasses bridge'],
+    };
+
+    Object.entries(expectedParts).forEach(([accessory, names]) => {
+      const character = factory.create({ ...DEFAULT_APPEARANCE, accessory });
+      expect(character.userData.appearance.accessory).toBe(accessory);
+      names.forEach((name) => expect(mesh(character, name)).toBeTruthy());
+      if (accessory === 'none') {
+        expect(mesh(character, 'Leaf pin')).toBeUndefined();
+        expect(mesh(character, 'Flower clip')).toBeUndefined();
+        expect(mesh(character, 'Left glasses rim')).toBeUndefined();
+      }
+    });
+    factory.dispose();
+  });
+
   it('reuses cached geometry and stable color material variants without sharing hierarchies', () => {
     const factory = new CharacterFactory();
     const first = factory.create(DEFAULT_APPEARANCE);

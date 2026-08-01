@@ -20,12 +20,15 @@ describe('character appearance options', () => {
       hairColor: '#123456',
       top: '#654321',
       bottom: '#fedcba',
+      shoes: '#123456',
+      accessory: 'legacy-hat',
     })).toEqual(DEFAULT_APPEARANCE);
   });
 
   it('accepts every catalog option and migrates the legacy default hair id', () => {
     for (const [group, key] of Object.entries({
       skinTones: 'skinTone', hairStyles: 'hairStyle', hairColors: 'hairColor', tops: 'top', bottoms: 'bottom',
+      shoes: 'shoes', accessories: 'accessory',
     })) {
       for (const { value } of CHARACTER_OPTIONS[group]) {
         expect(normalizeAppearance({ [key]: value })[key]).toBe(value);
@@ -51,32 +54,82 @@ function createCreator(saveResult) {
 }
 
 describe('CharacterCreator confirmation', () => {
-  it('renders exactly one checked radio in every option group for invalid saved appearance', () => {
+  it('renders all seven labeled groups with exactly one checked radio for invalid saved appearance', () => {
     const { creator, state } = createCreator(true);
     state.player.appearance = {
       skinTone: '#ffffff', hairStyle: 'unknown', hairColor: '#000000', top: 'bad', bottom: null,
+      shoes: '#ffffff', accessory: 'unknown',
     };
     creator.dispose();
     const replacement = new CharacterCreator({
       container: document.querySelector('#app'), state, player: { updateAppearance: vi.fn() },
     });
 
-    document.querySelectorAll('[role="radiogroup"]').forEach((group) => {
+    const groups = [...document.querySelectorAll('[role="radiogroup"]')];
+    expect(groups).toHaveLength(7);
+    expect(groups.map((group) => group.getAttribute('aria-label'))).toEqual([
+      'Skin tone', 'Hair style', 'Hair color', 'Favorite top', 'Bottoms', 'Shoes', 'Accessory',
+    ]);
+    groups.forEach((group) => {
       expect(group.querySelectorAll('[role="radio"][aria-checked="true"]')).toHaveLength(1);
     });
     replacement.dispose();
   });
 
-  it('keeps the creator open and does not emit completion when persistence fails', () => {
-    const { creator, state, eventBus, onComplete } = createCreator(false);
+  it('updates shoes and accessories live and supports arrow-key selection', () => {
+    const { creator, player } = createCreator(true);
+    const shoes = document.querySelector('[data-options="shoes"]');
+    const accessory = document.querySelector('[data-options="accessories"]');
+    const glasses = accessory.querySelector('[data-value="round-glasses"]');
+
+    glasses.click();
+    expect(player.updateAppearance).toHaveBeenLastCalledWith(
+      expect.objectContaining({ accessory: 'round-glasses' }), { syncState: false },
+    );
+
+    const selectedShoe = shoes.querySelector('[aria-checked="true"]');
+    selectedShoe.focus();
+    selectedShoe.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    expect(shoes.querySelector('[aria-checked="true"]')).not.toBe(selectedShoe);
+    expect(document.activeElement).toBe(shoes.querySelector('[aria-checked="true"]'));
+    creator.dispose();
+  });
+
+  it('rolls back state and the live character without completion when persistence fails', () => {
+    const { creator, state, player, eventBus, onComplete } = createCreator(false);
+    const original = structuredClone(state.player);
+    creator.nameInput.value = 'Mira';
+    document.querySelector('[data-options="accessories"] [data-value="round-glasses"]').click();
+
+    expect(creator.confirm()).toBe(false);
+    expect(state.player).toEqual(original);
+    expect(player.updateAppearance).toHaveBeenLastCalledWith(original.appearance, { syncState: false });
+    expect(document.querySelector('.creator-overlay')).not.toBeNull();
+    expect(document.querySelector('.creator-status').textContent).toMatch(/save/i);
+    expect(document.querySelector('.creator-status').getAttribute('role')).toBe('alert');
+    expect(eventBus.emit).not.toHaveBeenCalled();
+    expect(onComplete).not.toHaveBeenCalled();
+  });
+
+  it('rolls back thrown save errors and allows a successful retry', () => {
+    const { creator, state, player, eventBus, saveManager, onComplete } = createCreator(false);
+    const original = structuredClone(state.player);
+    saveManager.save
+      .mockImplementationOnce(() => { throw new Error('storage unavailable'); })
+      .mockReturnValueOnce(true);
     creator.nameInput.value = 'Mira';
 
     expect(creator.confirm()).toBe(false);
-    expect(state.player.creatorComplete).toBe(false);
-    expect(document.querySelector('.creator-overlay')).not.toBeNull();
-    expect(document.querySelector('.creator-status').textContent).toMatch(/save/i);
+    expect(state.player).toEqual(original);
+    expect(player.updateAppearance).toHaveBeenLastCalledWith(original.appearance, { syncState: false });
     expect(eventBus.emit).not.toHaveBeenCalled();
     expect(onComplete).not.toHaveBeenCalled();
+
+    expect(creator.confirm()).toBe(true);
+    expect(saveManager.save).toHaveBeenCalledTimes(2);
+    expect(state.player).toEqual(expect.objectContaining({ name: 'Mira', creatorComplete: true }));
+    expect(eventBus.emit).toHaveBeenCalledOnce();
+    expect(onComplete).toHaveBeenCalledOnce();
   });
 
   it('persists before completing, emits once, removes the dialog, and restores focus', () => {

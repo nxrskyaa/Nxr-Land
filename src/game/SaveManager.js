@@ -18,6 +18,7 @@ const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 const PLOT_STATES = new Set(['empty', 'tilled', 'planted', 'watered', 'growing', 'harvestable']);
 const WARDROBE_SLOTS = ['hair', 'top', 'bottom', 'shoes', 'accessory'];
 const REWARD_KEYS = new Set(['coin', 'items']);
+const QUEST_PHASES = new Set(['offered', 'accepted', 'ready', 'complete']);
 
 function isPlainObject(value) {
   if (value === null || typeof value !== 'object') return false;
@@ -185,6 +186,7 @@ function isValidState(state) {
     && isValidEquipped(collection.equipped)
     && isPositiveInteger(quests.chapter)
     && isNullableString(quests.activeId)
+    && (quests.phase === undefined || QUEST_PHASES.has(quests.phase))
     && isStringArray(quests.completedIds)
     && (quests.interactedIds === undefined || isStringArray(quests.interactedIds, true))
     && isQuantityMap(quests.progress, false)
@@ -241,6 +243,20 @@ function mergeDefaults(defaultValue, savedValue) {
       : value;
   }
   return merged;
+}
+
+function normalizeQuestLifecycle(state, createInitialState, wasMissing = false) {
+  if (!wasMissing) return state;
+  const defaults = createInitialState();
+  if (state.quests.activeId === null) {
+    state.quests.phase = 'complete';
+    return state;
+  }
+  const pristine = state.quests.activeId === defaults.quests.activeId
+    && state.quests.completedIds.length === 0
+    && (state.quests.progress[state.quests.activeId] ?? 0) === 0;
+  state.quests.phase = pristine ? 'offered' : 'accepted';
+  return state;
 }
 
 function migrateVersionZero(legacy, createInitialState) {
@@ -303,11 +319,20 @@ function decode(serialized, createInitialState) {
   try {
     const parsed = JSON.parse(serialized);
     if (isValidState(parsed)) {
-      return { state: mergeDefaults(createInitialState(), parsed), migrated: false };
+      const phaseMissing = !Object.hasOwn(parsed.quests, 'phase');
+      const merged = mergeDefaults(createInitialState(), parsed);
+      return {
+        state: normalizeQuestLifecycle(merged, createInitialState, phaseMissing),
+        migrated: false,
+      };
     }
     if (!isPlainObject(parsed) || parsed.schemaVersion !== 0 || !isJsonSafe(parsed)) return null;
 
-    const migrated = migrateVersionZero(parsed, createInitialState);
+    const migrated = normalizeQuestLifecycle(
+      migrateVersionZero(parsed, createInitialState),
+      createInitialState,
+      !Object.hasOwn(parsed.quests ?? {}, 'phase'),
+    );
     return isValidState(migrated) ? { state: migrated, migrated: true } : null;
   } catch {
     return null;

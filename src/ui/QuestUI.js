@@ -9,7 +9,7 @@ export class QuestUI {
     this.root.setAttribute('aria-label', 'Current quest');
     this.root.setAttribute('aria-live', 'polite');
     container.append(this.root);
-    this.unsubscribers = ['quest:progress', 'quest:completed', 'quest:started']
+    this.unsubscribers = ['quest:offered', 'quest:accepted', 'quest:progress', 'quest:ready', 'quest:completed']
       .map((type) => eventBus?.on?.(type, () => this.render())).filter(Boolean);
     this.render();
   }
@@ -22,12 +22,19 @@ export class QuestUI {
       return;
     }
     const progress = this.questSystem.getProgress();
+    const phase = this.questSystem.getPhase();
+    const npcName = ({ mira: 'Mira', tomo: 'Tomo', lumi: 'Lumi' })[this.questSystem.getQuestNpcId()] ?? 'the villager';
+    const objective = phase === 'offered'
+      ? `Talk to ${npcName} to accept: ${quest.objective}`
+      : phase === 'ready'
+        ? `Return to ${npcName} to turn in this quest and claim the reward.`
+        : quest.objective;
     const percent = Math.round((progress.current / progress.required) * 100);
     this.root.classList.remove('is-complete');
     this.root.innerHTML = `
       <p class="quest-kicker">Chapter 1 · Quest ${quest.order} of 8</p>
       <h2>${quest.title}</h2>
-      <p class="quest-objective">${quest.objective}</p>
+      <p class="quest-objective">${objective}</p>
       <div class="quest-meta"><span>📍 ${quest.destination}</span><strong>${progress.current} / ${progress.required}</strong></div>
       <div class="quest-progress" role="progressbar" aria-label="Quest progress" aria-valuemin="0" aria-valuemax="${progress.required}" aria-valuenow="${progress.current}"><i style="width:${percent}%"></i></div>
       <p class="quest-reward"><span>Reward</span> ${this.questSystem.getRewardLabel(quest)}</p>`;

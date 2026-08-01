@@ -112,6 +112,7 @@ export function createInitialState() {
     quests: {
       chapter: 1,
       activeId: QUESTS[0].id,
+      phase: 'offered',
       completedIds: [],
       interactedIds: [],
       progress: Object.fromEntries(QUESTS.map((quest) => [quest.id, 0])),

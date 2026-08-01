@@ -111,4 +111,38 @@ describe('EventBus', () => {
     expect(() => bus.emit('save')).toThrow(failure);
     expect(afterError).not.toHaveBeenCalled();
   });
+
+  it('offers an explicit safe post-commit dispatch without weakening emit semantics', () => {
+    const bus = new EventBus();
+    const afterError = vi.fn();
+    bus.on('saved', () => { throw new Error('broken view'); });
+    bus.on('saved', afterError);
+
+    expect(bus.emitSafe('saved', { durable: true })).toHaveLength(1);
+    expect(afterError).toHaveBeenCalledWith({ durable: true });
+    expect(() => bus.emit('saved')).toThrow('broken view');
+  });
+
+  it('rolls prepare mutations back before persistence and contains post-commit failures', () => {
+    const bus = new EventBus();
+    const state = { source: 0, derived: 0 };
+    const save = vi.fn(() => true);
+    bus.onPrepare('change', () => {
+      state.derived += 1;
+      return { result: 'prepared', commit: () => { throw new Error('view failed'); } };
+    });
+
+    expect(bus.transact('change', { id: 1 }, {
+      state, mutate: () => { state.source += 1; }, save,
+    })).toMatchObject({ ok: true, prepared: ['prepared'] });
+    expect(state).toEqual({ source: 1, derived: 1 });
+    expect(save).toHaveBeenCalledTimes(1);
+
+    bus.onPrepare('broken', () => { state.derived += 1; throw new Error('prepare failed'); });
+    expect(bus.transact('broken', {}, {
+      state, mutate: () => { state.source += 1; }, save,
+    })).toMatchObject({ ok: false, code: 'transaction-failed' });
+    expect(state).toEqual({ source: 1, derived: 1 });
+    expect(save).toHaveBeenCalledTimes(1);
+  });
 });

@@ -280,6 +280,10 @@ export class Game {
       root.add(mesh);
       return mesh;
     };
+    const leaf = material(0x5d9b58);
+    const glow = material(0xf7d978, { emissive: 0xf1b84b, emissiveIntensity: 0.55 });
+    const wood = material(0x9a6b49);
+    const stone = material(0x91a99d);
 
     for (const definition of this.questSystem.getWorldObjects()) {
       const root = new THREE.Group();
@@ -287,10 +291,6 @@ export class Game {
       root.position.set(definition.position.x, definition.position.y, definition.position.z);
       root.userData.baseY = definition.position.y;
       root.userData.questObjectId = definition.id;
-      const leaf = material(0x5d9b58);
-      const glow = material(0xf7d978, { emissive: 0xf1b84b, emissiveIntensity: 0.55 });
-      const wood = material(0x9a6b49);
-      const stone = material(0x91a99d);
       if (definition.id.startsWith('garden-weed-')) {
         for (const [x, z, rotation] of [[-0.2, 0, -0.25], [0.05, 0.05, 0.08], [0.22, -0.05, 0.3]]) {
           const blade = addMesh(root, geometry(new THREE.ConeGeometry(0.12, 0.72, 6)), leaf, { x, y: 0.36, z });
@@ -319,7 +319,19 @@ export class Game {
       this.scene.add(root);
       this.questObjects.set(definition.id, { ...definition, root, marker });
     }
-    this.questUnsubscribers = ['quest:progress', 'quest:completed', 'quest:started']
+
+    const beaconRoot = new THREE.Group();
+    beaconRoot.name = 'Quest destination beacon';
+    const beaconRing = addMesh(beaconRoot, geometry(new THREE.TorusGeometry(0.45, 0.07, 8, 28)), glow, { y: 0.12 });
+    beaconRing.rotation.x = Math.PI / 2;
+    beaconRing.name = 'Destination ring';
+    const beaconMarker = addMesh(beaconRoot, geometry(new THREE.OctahedronGeometry(0.17, 0)), glow, { y: 1.35 });
+    beaconMarker.name = 'Destination marker';
+    beaconRoot.visible = false;
+    this.scene.add(beaconRoot);
+    this.destinationBeacon = { root: beaconRoot, ring: beaconRing, marker: beaconMarker };
+
+    this.questUnsubscribers = ['quest:offered', 'quest:accepted', 'quest:progress', 'quest:ready', 'quest:completed']
       .map((type) => this.eventBus?.on?.(type, () => this.#syncQuestObjects()))
       .filter(Boolean);
     this.#syncQuestObjects();
@@ -337,6 +349,14 @@ export class Game {
       object.marker.visible = state.active && !state.used;
       object.root.userData.active = state.active;
       object.root.userData.used = state.used;
+    }
+    const markerState = this.questSystem?.getNpcMarkerState?.() ?? {};
+    for (const npc of this.npcs ?? []) npc.root.userData.questRelevant = Boolean(markerState[npc.id]);
+
+    const beacon = this.questSystem?.getDestinationBeacon?.();
+    if (this.destinationBeacon) {
+      this.destinationBeacon.root.visible = Boolean(beacon);
+      if (beacon) this.destinationBeacon.root.position.set(beacon.position.x, beacon.position.y, beacon.position.z);
     }
   }
 
@@ -388,7 +408,9 @@ export class Game {
       return;
     }
     if (target?.type === 'npc') {
-      this.dialogueUI.open(this.questSystem.getDialogue(target.id));
+      const interaction = this.questSystem.interactNpc(target.id);
+      this.#syncQuestObjects();
+      this.dialogueUI.open(this.questSystem.getDialogue(target.id, interaction));
       this.dialogueUI.setPrompt('');
       return;
     }
@@ -479,7 +501,7 @@ export class Game {
     this.player?.update(safeDelta, elapsed);
     const location = getEnteredLocation(this.player?.position, null);
     if (location && location !== this.currentLocation) {
-      this.eventBus?.emit?.('location:entered', {
+      this.questSystem?.record?.('location:entered', {
         locationId: location,
         position: { ...this.state.player.position },
       });
@@ -491,6 +513,11 @@ export class Game {
       object.root.position.y = object.root.userData.baseY
         + (object.active ? Math.sin(elapsed * 2.2 + object.id.length) * 0.045 : 0);
       if (object.marker.visible) object.marker.rotation.y += safeDelta * 1.8;
+    }
+    if (this.destinationBeacon?.root.visible) {
+      this.destinationBeacon.root.position.y = Math.sin(elapsed * 2.2) * 0.06;
+      this.destinationBeacon.ring.rotation.z += safeDelta * 0.8;
+      this.destinationBeacon.marker.rotation.y += safeDelta * 1.8;
     }
     const promptTarget = chooseInteractionTarget(this.#getInteractionTargets(), {
       dialogueOpen: this.dialogueUI?.isOpen(),
@@ -553,6 +580,7 @@ export class Game {
     this.npcs?.forEach((npc) => npc.dispose());
     this.npcFactory?.dispose();
     this.questObjects?.forEach(({ root }) => root.removeFromParent());
+    this.destinationBeacon?.root.removeFromParent();
     this.questObjectResources?.geometries.forEach((geometry) => geometry.dispose());
     this.questObjectResources?.materials.forEach((material) => material.dispose());
     this.questObjects?.clear();
@@ -578,6 +606,7 @@ export class Game {
     this.npcs = null;
     this.npcFactory = null;
     this.questObjects = null;
+    this.destinationBeacon = null;
     this.questObjectResources = null;
     this.economySystem = null;
     this.cameraController = null;

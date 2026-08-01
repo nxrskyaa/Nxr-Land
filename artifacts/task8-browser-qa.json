@@ -82,8 +82,62 @@
   },
   "trace": [
     {
+      "label": "Mira: accept quest 1",
+      "activeId": "chapter-1-arrive",
+      "phase": "accepted",
+      "completed": [],
+      "progress": {
+        "chapter-1-arrive": 0,
+        "chapter-1-clear-garden": 0,
+        "chapter-1-plant-crop": 0,
+        "chapter-1-reopen-market": 0,
+        "chapter-1-find-spirit-seed": 0,
+        "chapter-1-hatch-first-pet": 0,
+        "chapter-1-rebuild-planter": 0,
+        "chapter-1-restore-heartroot": 0
+      },
+      "coin": 50
+    },
+    {
       "label": "entered town plaza",
+      "activeId": "chapter-1-arrive",
+      "phase": "ready",
+      "completed": [],
+      "progress": {
+        "chapter-1-arrive": 1,
+        "chapter-1-clear-garden": 0,
+        "chapter-1-plant-crop": 0,
+        "chapter-1-reopen-market": 0,
+        "chapter-1-find-spirit-seed": 0,
+        "chapter-1-hatch-first-pet": 0,
+        "chapter-1-rebuild-planter": 0,
+        "chapter-1-restore-heartroot": 0
+      },
+      "coin": 50
+    },
+    {
+      "label": "Mira: turn in quest 1",
       "activeId": "chapter-1-clear-garden",
+      "phase": "offered",
+      "completed": [
+        "chapter-1-arrive"
+      ],
+      "progress": {
+        "chapter-1-arrive": 1,
+        "chapter-1-clear-garden": 0,
+        "chapter-1-plant-crop": 0,
+        "chapter-1-reopen-market": 0,
+        "chapter-1-find-spirit-seed": 0,
+        "chapter-1-hatch-first-pet": 0,
+        "chapter-1-rebuild-planter": 0,
+        "chapter-1-restore-heartroot": 0
+      },
+      "coin": 70
+    },
+    {
+      "label": "Mira: accept quest 2",
+      "activeId": "chapter-1-clear-garden",
+      "phase": "accepted",
       "completed": [
         "chapter-1-arrive"
       ],
@@ -101,7 +155,47 @@
     },
     {
       "label": "cleared three weeds",
+      "activeId": "chapter-1-clear-garden",
+      "phase": "ready",
+      "completed": [
+        "chapter-1-arrive"
+      ],
+      "progress": {
+        "chapter-1-arrive": 1,
+        "chapter-1-clear-garden": 3,
+        "chapter-1-plant-crop": 0,
+        "chapter-1-reopen-market": 0,
+        "chapter-1-find-spirit-seed": 0,
+        "chapter-1-hatch-first-pet": 0,
+        "chapter-1-rebuild-planter": 0,
+        "chapter-1-restore-heartroot": 0
+      },
+      "coin": 70
+    },
+    {
+      "label": "Mira: turn in quest 2",
       "activeId": "chapter-1-plant-crop",
+      "phase": "offered",
+      "completed": [
+        "chapter-1-arrive",
+        "chapter-1-clear-garden"
+      ],
+      "progress": {
+        "chapter-1-arrive": 1,
+        "chapter-1-clear-garden": 3,
+        "chapter-1-plant-crop": 0,
+        "chapter-1-reopen-market": 0,
+        "chapter-1-find-spirit-seed": 0,
+        "chapter-1-hatch-first-pet": 0,
+        "chapter-1-rebuild-planter": 0,
+        "chapter-1-restore-heartroot": 0
+      },
+      "coin": 95
+    },
+    {
+      "label": "Mira: accept quest 3",
+      "activeId": "chapter-1-plant-crop",
+      "phase": "accepted",
       "completed": [
         "chapter-1-arrive",
         "chapter-1-clear-garden"
@@ -120,7 +214,49 @@
     },
     {
       "label": "watered first crop",
+      "activeId": "chapter-1-plant-crop",
+      "phase": "ready",
+      "completed": [
+        "chapter-1-arrive",
+        "chapter-1-clear-garden"
+      ],
+      "progress": {
+        "chapter-1-arrive": 1,
+        "chapter-1-clear-garden": 3,
+        "chapter-1-plant-crop": 1,
+        "chapter-1-reopen-market": 0,
+        "chapter-1-find-spirit-seed": 0,
+        "chapter-1-hatch-first-pet": 0,
+        "chapter-1-rebuild-planter": 0,
+        "chapter-1-restore-heartroot": 0
+      },
+      "coin": 95
+    },
+    {
+      "label": "Mira: turn in quest 3",
       "activeId": "chapter-1-reopen-market",
+      "phase": "offered",
+      "completed": [
+        "chapter-1-arrive",
+        "chapter-1-clear-garden",
+        "chapter-1-plant-crop"
+      ],
+      "progress": {
+        "chapter-1-arrive": 1,
+        "chapter-1-clear-garden": 3,
+        "chapter-1-plant-crop": 1,
+        "chapter-1-reopen-market": 0,
+        "chapter-1-find-spirit-seed": 0,
+        "chapter-1-hatch-first-pet": 0,
+        "chapter-1-rebuild-planter": 0,
+        "chapter-1-restore-heartroot": 0
+      },
+      "coin": 125
+    },
+    {
+      "label": "Tomo: accept quest 4",
+      "activeId": "chapter-1-reopen-market",
+      "phase": "accepted",
       "completed": [
         "chapter-1-arrive",
         "chapter-1-clear-garden",
@@ -140,7 +276,51 @@
     },
     {
       "label": "harvested and sold produce",
+      "activeId": "chapter-1-reopen-market",
+      "phase": "ready",
+      "completed": [
+        "chapter-1-arrive",
+        "chapter-1-clear-garden",
+        "chapter-1-plant-crop"
+      ],
+      "progress": {
+        "chapter-1-arrive": 1,
+        "chapter-1-clear-garden": 3,
+        "chapter-1-plant-crop": 1,
+        "chapter-1-reopen-market": 1,
+        "chapter-1-find-spirit-seed": 0,
+        "chapter-1-hatch-first-pet": 0,
+        "chapter-1-rebuild-planter": 0,
+        "chapter-1-restore-heartroot": 0
+      },
+      "coin": 143
+    },
+    {
+      "label": "Tomo: turn in quest 4",
       "activeId": "chapter-1-find-spirit-seed",
+      "phase": "offered",
+      "completed": [
+        "chapter-1-arrive",
+        "chapter-1-clear-garden",
+        "chapter-1-plant-crop",
+        "chapter-1-reopen-market"
+      ],
+      "progress": {
+        "chapter-1-arrive": 1,
+        "chapter-1-clear-garden": 3,
+        "chapter-1-plant-crop": 1,
+        "chapter-1-reopen-market": 1,
+        "chapter-1-find-spirit-seed": 0,
+        "chapter-1-hatch-first-pet": 0,
+        "chapter-1-rebuild-planter": 0,
+        "chapter-1-restore-heartroot": 0
+      },
+      "coin": 193
+    },
+    {
+      "label": "Lumi: accept quest 5",
+      "activeId": "chapter-1-find-spirit-seed",
+      "phase": "accepted",
       "completed": [
         "chapter-1-arrive",
         "chapter-1-clear-garden",
@@ -161,7 +341,53 @@
     },
     {
       "label": "collected Spirit Seed",
+      "activeId": "chapter-1-find-spirit-seed",
+      "phase": "ready",
+      "completed": [
+        "chapter-1-arrive",
+        "chapter-1-clear-garden",
+        "chapter-1-plant-crop",
+        "chapter-1-reopen-market"
+      ],
+      "progress": {
+        "chapter-1-arrive": 1,
+        "chapter-1-clear-garden": 3,
+        "chapter-1-plant-crop": 1,
+        "chapter-1-reopen-market": 1,
+        "chapter-1-find-spirit-seed": 1,
+        "chapter-1-hatch-first-pet": 0,
+        "chapter-1-rebuild-planter": 0,
+        "chapter-1-restore-heartroot": 0
+      },
+      "coin": 193
+    },
+    {
+      "label": "Lumi: turn in collected Spirit Seed",
       "activeId": "chapter-1-hatch-first-pet",
+      "phase": "offered",
+      "completed": [
+        "chapter-1-arrive",
+        "chapter-1-clear-garden",
+        "chapter-1-plant-crop",
+        "chapter-1-reopen-market",
+        "chapter-1-find-spirit-seed"
+      ],
+      "progress": {
+        "chapter-1-arrive": 1,
+        "chapter-1-clear-garden": 3,
+        "chapter-1-plant-crop": 1,
+        "chapter-1-reopen-market": 1,
+        "chapter-1-find-spirit-seed": 1,
+        "chapter-1-hatch-first-pet": 0,
+        "chapter-1-rebuild-planter": 0,
+        "chapter-1-restore-heartroot": 0
+      },
+      "coin": 233
+    },
+    {
+      "label": "Lumi: accept after collected Spirit Seed",
+      "activeId": "chapter-1-hatch-first-pet",
+      "phase": "accepted",
       "completed": [
         "chapter-1-arrive",
         "chapter-1-clear-garden",
@@ -183,7 +409,55 @@
     },
     {
       "label": "hatched Sproutling with Lumi",
+      "activeId": "chapter-1-hatch-first-pet",
+      "phase": "ready",
+      "completed": [
+        "chapter-1-arrive",
+        "chapter-1-clear-garden",
+        "chapter-1-plant-crop",
+        "chapter-1-reopen-market",
+        "chapter-1-find-spirit-seed"
+      ],
+      "progress": {
+        "chapter-1-arrive": 1,
+        "chapter-1-clear-garden": 3,
+        "chapter-1-plant-crop": 1,
+        "chapter-1-reopen-market": 1,
+        "chapter-1-find-spirit-seed": 1,
+        "chapter-1-hatch-first-pet": 1,
+        "chapter-1-rebuild-planter": 0,
+        "chapter-1-restore-heartroot": 0
+      },
+      "coin": 233
+    },
+    {
+      "label": "Lumi: turn in hatched Sproutling with Lumi",
       "activeId": "chapter-1-rebuild-planter",
+      "phase": "offered",
+      "completed": [
+        "chapter-1-arrive",
+        "chapter-1-clear-garden",
+        "chapter-1-plant-crop",
+        "chapter-1-reopen-market",
+        "chapter-1-find-spirit-seed",
+        "chapter-1-hatch-first-pet"
+      ],
+      "progress": {
+        "chapter-1-arrive": 1,
+        "chapter-1-clear-garden": 3,
+        "chapter-1-plant-crop": 1,
+        "chapter-1-reopen-market": 1,
+        "chapter-1-find-spirit-seed": 1,
+        "chapter-1-hatch-first-pet": 1,
+        "chapter-1-rebuild-planter": 0,
+        "chapter-1-restore-heartroot": 0
+      },
+      "coin": 273
+    },
+    {
+      "label": "Mira: accept after hatched Sproutling with Lumi",
+      "activeId": "chapter-1-rebuild-planter",
+      "phase": "accepted",
       "completed": [
         "chapter-1-arrive",
         "chapter-1-clear-garden",
@@ -206,7 +480,57 @@
     },
     {
       "label": "placed village planter",
+      "activeId": "chapter-1-rebuild-planter",
+      "phase": "ready",
+      "completed": [
+        "chapter-1-arrive",
+        "chapter-1-clear-garden",
+        "chapter-1-plant-crop",
+        "chapter-1-reopen-market",
+        "chapter-1-find-spirit-seed",
+        "chapter-1-hatch-first-pet"
+      ],
+      "progress": {
+        "chapter-1-arrive": 1,
+        "chapter-1-clear-garden": 3,
+        "chapter-1-plant-crop": 1,
+        "chapter-1-reopen-market": 1,
+        "chapter-1-find-spirit-seed": 1,
+        "chapter-1-hatch-first-pet": 1,
+        "chapter-1-rebuild-planter": 1,
+        "chapter-1-restore-heartroot": 0
+      },
+      "coin": 273
+    },
+    {
+      "label": "Mira: turn in placed village planter",
       "activeId": "chapter-1-restore-heartroot",
+      "phase": "offered",
+      "completed": [
+        "chapter-1-arrive",
+        "chapter-1-clear-garden",
+        "chapter-1-plant-crop",
+        "chapter-1-reopen-market",
+        "chapter-1-find-spirit-seed",
+        "chapter-1-hatch-first-pet",
+        "chapter-1-rebuild-planter"
+      ],
+      "progress": {
+        "chapter-1-arrive": 1,
+        "chapter-1-clear-garden": 3,
+        "chapter-1-plant-crop": 1,
+        "chapter-1-reopen-market": 1,
+        "chapter-1-find-spirit-seed": 1,
+        "chapter-1-hatch-first-pet": 1,
+        "chapter-1-rebuild-planter": 1,
+        "chapter-1-restore-heartroot": 0
+      },
+      "coin": 348
+    },
+    {
+      "label": "Mira: accept after placed village planter",
+      "activeId": "chapter-1-restore-heartroot",
+      "phase": "accepted",
       "completed": [
         "chapter-1-arrive",
         "chapter-1-clear-garden",
@@ -230,7 +554,33 @@
     },
     {
       "label": "restored Heartroot first light",
+      "activeId": "chapter-1-restore-heartroot",
+      "phase": "ready",
+      "completed": [
+        "chapter-1-arrive",
+        "chapter-1-clear-garden",
+        "chapter-1-plant-crop",
+        "chapter-1-reopen-market",
+        "chapter-1-find-spirit-seed",
+        "chapter-1-hatch-first-pet",
+        "chapter-1-rebuild-planter"
+      ],
+      "progress": {
+        "chapter-1-arrive": 1,
+        "chapter-1-clear-garden": 3,
+        "chapter-1-plant-crop": 1,
+        "chapter-1-reopen-market": 1,
+        "chapter-1-find-spirit-seed": 1,
+        "chapter-1-hatch-first-pet": 1,
+        "chapter-1-rebuild-planter": 1,
+        "chapter-1-restore-heartroot": 1
+      },
+      "coin": 348
+    },
+    {
+      "label": "Mira: turn in restored Heartroot first light",
       "activeId": null,
+      "phase": "complete",
       "completed": [
         "chapter-1-arrive",
         "chapter-1-clear-garden",

@@ -38,23 +38,40 @@ export class EconomySystem {
 
   #transact({ action, eventType, item, quantity, unitPrice, coinDelta, stockDelta }) {
     const economy = this.state.economy;
-    const hadStock = Object.hasOwn(economy.inventory, item.id);
-    const previousCoin = economy.coin;
     const previousStock = this.#stock(item.id);
-    economy.coin += coinDelta;
-    economy.inventory[item.id] = previousStock + stockDelta;
-    if (!this.#save()) {
-      economy.coin = previousCoin;
-      if (hadStock) economy.inventory[item.id] = previousStock;
-      else delete economy.inventory[item.id];
-      return failure('save-failed', 'Could not save this transaction', { itemId: item.id, quantity });
-    }
     const total = unitPrice * quantity;
-    const payload = Object.freeze({
+    const payload = () => Object.freeze({
       action, itemId: item.id, item, quantity, unitPrice, total,
       coin: economy.coin, inventoryQuantity: economy.inventory[item.id],
     });
-    this.eventBus?.emit?.(eventType, payload);
+    const mutate = () => {
+      economy.coin += coinDelta;
+      economy.inventory[item.id] = previousStock + stockDelta;
+    };
+
+    if (this.eventBus?.transact) {
+      const transaction = this.eventBus.transact(eventType, payload, {
+        state: this.state,
+        mutate,
+        save: () => this.#save(),
+      });
+      if (!transaction.ok) {
+        return failure(transaction.code, transaction.code === 'transaction-failed'
+          ? 'Transaction could not be prepared'
+          : 'Could not save this transaction', { itemId: item.id, quantity });
+      }
+    } else {
+      const hadStock = Object.hasOwn(economy.inventory, item.id);
+      const previousCoin = economy.coin;
+      mutate();
+      if (!this.#save()) {
+        economy.coin = previousCoin;
+        if (hadStock) economy.inventory[item.id] = previousStock;
+        else delete economy.inventory[item.id];
+        return failure('save-failed', 'Could not save this transaction', { itemId: item.id, quantity });
+      }
+      this.eventBus?.emit?.(eventType, payload());
+    }
     return success(action, item.id, quantity, economy.coin, economy.inventory[item.id], { unitPrice, total });
   }
 

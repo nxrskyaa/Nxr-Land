@@ -76,14 +76,24 @@ export class FarmingSystem {
     }
   }
 
-  #commit(eventType, plot, extra = {}) {
-    if (!this.#save()) return false;
+  #commit(eventType, plot, extra = {}, snapshot = null) {
+    if (this.eventBus?.transact) {
+      return this.eventBus.transact(eventType, () => this.#payload(plot, extra), {
+        state: this.state,
+        snapshot,
+        save: () => this.#save(),
+      });
+    }
+    if (!this.#save()) return { ok: false, code: 'save-failed' };
     this.eventBus?.emit?.(eventType, this.#payload(plot, extra));
-    return true;
+    return { ok: true, code: 'ok' };
   }
 
-  #saveFailure(plotId) {
-    return failure('save-failed', 'Could not save farming progress', { plotId });
+  #saveFailure(plotId, code = 'save-failed') {
+    const message = code === 'transaction-failed'
+      ? 'Farming transaction could not be prepared'
+      : 'Could not save farming progress';
+    return failure(code, message, { plotId });
   }
 
   #validatePlot(plotId, expected) {
@@ -98,10 +108,12 @@ export class FarmingSystem {
   till(plotId) {
     const { plot, error } = this.#validatePlot(plotId, ['empty']);
     if (error) return error;
+    const snapshot = structuredClone(this.state);
     plot.state = 'tilled';
-    if (!this.#commit('plot:tilled', plot)) {
+    const transaction = this.#commit('plot:tilled', plot, {}, snapshot);
+    if (!transaction.ok) {
       plot.state = 'empty';
-      return this.#saveFailure(plotId);
+      return this.#saveFailure(plotId, transaction.code);
     }
     return success('till', plot);
   }
@@ -119,6 +131,7 @@ export class FarmingSystem {
     const timestamp = this.#time();
     if (timestamp === null) return failure('invalid-time', 'World time must be finite', { plotId, cropId });
 
+    const snapshot = structuredClone(this.state);
     const previousPlot = { ...plot };
     const previousSeedCount = inventory[seedId];
     const previousStage = this.lastStages.get(plot.id);
@@ -127,12 +140,13 @@ export class FarmingSystem {
       state: 'planted', cropId, plantedAt: timestamp, wateredAt: null, growthStartedAt: null,
     });
     this.lastStages.set(plot.id, 0);
-    if (!this.#commit('crop:planted', plot)) {
+    const transaction = this.#commit('crop:planted', plot, {}, snapshot);
+    if (!transaction.ok) {
       Object.assign(plot, previousPlot);
       inventory[seedId] = previousSeedCount;
       if (previousStage === undefined) this.lastStages.delete(plot.id);
       else this.lastStages.set(plot.id, previousStage);
-      return this.#saveFailure(plotId);
+      return this.#saveFailure(plotId, transaction.code);
     }
     return success('plant', plot, { cropId, seedId });
   }
@@ -142,13 +156,15 @@ export class FarmingSystem {
     if (error) return error;
     const timestamp = this.#time();
     if (timestamp === null) return failure('invalid-time', 'World time must be finite', { plotId });
+    const snapshot = structuredClone(this.state);
     const previousPlot = { ...plot };
     plot.state = 'watered';
     plot.wateredAt = timestamp;
     plot.growthStartedAt = timestamp;
-    if (!this.#commit('crop:watered', plot)) {
+    const transaction = this.#commit('crop:watered', plot, {}, snapshot);
+    if (!transaction.ok) {
       Object.assign(plot, previousPlot);
-      return this.#saveFailure(plotId);
+      return this.#saveFailure(plotId, transaction.code);
     }
     return success('water', plot, { cropId: plot.cropId });
   }

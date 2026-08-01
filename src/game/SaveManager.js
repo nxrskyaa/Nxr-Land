@@ -13,11 +13,10 @@ const REQUIRED_SECTIONS = [
   'settings',
   'playtime',
 ];
-
 const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 const PLOT_STATES = new Set(['empty', 'tilled', 'planted', 'watered', 'growing', 'harvestable']);
 const WARDROBE_SLOTS = ['hair', 'top', 'bottom', 'shoes', 'accessory'];
-const REWARD_KEYS = new Set(['coin', 'items']);
+const REWARD_KEYS = new Set(['coin', 'items', 'wardrobe']);
 const QUEST_PHASES = new Set(['offered', 'accepted', 'ready', 'complete']);
 
 function isPlainObject(value) {
@@ -136,7 +135,8 @@ function isValidReward(reward) {
   return isPlainObject(reward)
     && Object.keys(reward).every((key) => REWARD_KEYS.has(key))
     && (reward.coin === undefined || isFiniteNonnegative(reward.coin))
-    && (reward.items === undefined || isQuantityMap(reward.items));
+    && (reward.items === undefined || isQuantityMap(reward.items, true, true))
+    && (reward.wardrobe === undefined || isStringArray(reward.wardrobe, true));
 }
 
 function isValidDailyRewardEntry(entry) {
@@ -193,6 +193,7 @@ function isValidState(state) {
     && isPlainObject(rewards.daily)
     && isNullableString(rewards.daily.lastClaimDate)
     && isNonnegativeInteger(rewards.daily.streak)
+    && rewards.daily.streak <= rewards.daily.track.length
     && Array.isArray(rewards.daily.claimedDays)
     && rewards.daily.claimedDays.every((day) => isPositiveInteger(day) || isNonEmptyString(day))
     && Array.isArray(rewards.daily.track)
@@ -318,9 +319,16 @@ function decode(serialized, createInitialState) {
 
   try {
     const parsed = JSON.parse(serialized);
-    if (isValidState(parsed)) {
-      const phaseMissing = !Object.hasOwn(parsed.quests, 'phase');
-      const merged = mergeDefaults(createInitialState(), parsed);
+    if (isPlainObject(parsed) && parsed.schemaVersion === 1 && isJsonSafe(parsed)) {
+      const defaults = createInitialState();
+      const phaseMissing = !Object.hasOwn(parsed.quests ?? {}, 'phase');
+      const compatibilityCandidate = {
+        ...parsed,
+        rewards: parsed.rewards ?? defaults.rewards,
+        playtime: parsed.playtime ?? defaults.playtime,
+      };
+      if (!isValidState(compatibilityCandidate)) return null;
+      const merged = mergeDefaults(defaults, parsed);
       return {
         state: normalizeQuestLifecycle(merged, createInitialState, phaseMissing),
         migrated: false,

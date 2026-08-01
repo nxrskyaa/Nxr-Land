@@ -107,6 +107,8 @@ export function initializeApp(root = document, options = {}) {
       state,
       eventBus,
       saveManager,
+      clock: options.clock,
+      presence: options.presence,
       onFatal: handleFatal,
     });
     game.start();

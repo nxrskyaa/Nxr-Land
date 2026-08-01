@@ -1,6 +1,6 @@
 import { ITEM_BY_ID } from '../data/items.js';
 
-const REFRESH_EVENTS = ['economy:purchased', 'economy:sold', 'crop:planted', 'crop:harvested', 'quest:completed'];
+const REFRESH_EVENTS = ['economy:purchased', 'economy:sold', 'crop:planted', 'crop:harvested', 'quest:completed', 'reward:daily-claimed', 'reward:milestone-claimed'];
 
 export class InventoryUI {
   constructor({ container, state, eventBus } = {}) {

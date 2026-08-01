@@ -13,6 +13,8 @@ import { HotbarUI } from '../ui/HotbarUI.js';
 import { QuestSystem } from '../systems/QuestSystem.js';
 import { DialogueUI } from '../ui/DialogueUI.js';
 import { QuestUI } from '../ui/QuestUI.js';
+import { RewardSystem } from '../systems/RewardSystem.js';
+import { RewardUI } from '../ui/RewardUI.js';
 import { NPC } from '../entities/NPC.js';
 import { NPCFactory } from '../visuals/NPCFactory.js';
 
@@ -127,7 +129,7 @@ export function updateFarmingFrame({ timeSystem, farmingSystem, world } = {}, de
 }
 
 export class Game {
-  constructor({ container, state, eventBus, saveManager, rendererFactory, onFatal } = {}) {
+  constructor({ container, state, eventBus, saveManager, rendererFactory, onFatal, clock, presence } = {}) {
     if (!container) throw new Error('Game requires a container element');
     this.container = container;
     this.state = state;
@@ -168,8 +170,10 @@ export class Game {
       });
       this.economySystem = new EconomySystem({ state, eventBus, saveManager });
       this.questSystem = new QuestSystem({ state, eventBus, saveManager });
+      this.rewardSystem = new RewardSystem({ state, eventBus, saveManager, clock, presence });
       this.dialogueUI = new DialogueUI({ container: this.container, eventBus });
       this.questUI = new QuestUI({ container: this.container, questSystem: this.questSystem, eventBus });
+      this.rewardUI = new RewardUI({ container: this.container, rewardSystem: this.rewardSystem, eventBus });
       this.npcFactory = new NPCFactory();
       this.npcs = [
         { id: 'mira', name: 'Mira', role: 'Village Steward', position: { x: 3.4, y: 0, z: -0.4 } },
@@ -496,6 +500,7 @@ export class Game {
 
   update(delta, elapsed = this.elapsed) {
     const safeDelta = clampDelta(delta);
+    this.rewardSystem?.update();
     updateFarmingFrame(this, safeDelta);
     this.world?.update(safeDelta, elapsed);
     this.player?.update(safeDelta, elapsed);
@@ -563,6 +568,7 @@ export class Game {
 
   dispose() {
     if (this.disposed) return;
+    this.rewardSystem?.dispose();
     saveBeforeDispose(this.saveManager, this.state);
     this.disposed = true;
     this.stop();
@@ -577,6 +583,7 @@ export class Game {
     this.dialogueUI?.dispose();
     this.questUI?.dispose();
     this.questSystem?.dispose();
+    this.rewardUI?.dispose();
     this.npcs?.forEach((npc) => npc.dispose());
     this.npcFactory?.dispose();
     this.questObjects?.forEach(({ root }) => root.removeFromParent());
@@ -603,6 +610,8 @@ export class Game {
     this.dialogueUI = null;
     this.questUI = null;
     this.questSystem = null;
+    this.rewardUI = null;
+    this.rewardSystem = null;
     this.npcs = null;
     this.npcFactory = null;
     this.questObjects = null;

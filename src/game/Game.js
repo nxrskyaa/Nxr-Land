@@ -151,7 +151,7 @@ export class Game {
       this.renderer = createRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
       this.renderer.outputColorSpace = THREE.SRGBColorSpace;
       this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      this.renderer.toneMappingExposure = 1.08;
+      this.renderer.toneMappingExposure = 1.16;
       this.renderer.setClearColor(0xbfe3dd, 1);
       this.renderer.shadowMap.enabled = state?.settings?.graphics?.shadows !== false;
       this.renderer.shadowMap.type = THREE.PCFShadowMap;

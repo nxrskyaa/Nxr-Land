@@ -20,6 +20,7 @@ import { NPCFactory } from '../visuals/NPCFactory.js';
 import { GachaSystem } from '../systems/GachaSystem.js';
 import { GachaUI } from '../ui/GachaUI.js';
 import { WardrobeUI } from '../ui/WardrobeUI.js';
+import { DockUI } from '../ui/DockUI.js';
 import { Pet } from '../entities/Pet.js';
 
 const MAX_DELTA_SECONDS = 0.05;
@@ -214,6 +215,17 @@ export class Game {
         saveManager,
       });
       this.wardrobeUI = new WardrobeUI({ container: this.container, state, player: this.player, saveManager, eventBus });
+      this.dockUI = new DockUI({
+        container: this.container,
+        onOpenChange: (open) => {
+          this.input?.setEnabled(!open);
+          this.container.classList.toggle('menu-open', open);
+        },
+      });
+      this.dockUI.register('market', this.shopUI?.element);
+      this.dockUI.register('rewards', this.rewardUI?.root);
+      this.dockUI.register('wishes', this.gachaUI?.element);
+      this.dockUI.register('wardrobe', this.wardrobeUI?.element);
       this.pet = state.collection?.equipped?.petId
         ? new Pet({ scene: this.scene, petId: state.collection.equipped.petId, position: state.player.position })
         : null;
@@ -604,6 +616,9 @@ export class Game {
     this.inventoryUI?.dispose();
     this.shopUI?.dispose();
     this.hotbarUI?.dispose();
+    this.gachaUI?.dispose();
+    this.wardrobeUI?.dispose();
+    this.dockUI?.dispose();
     this.input?.dispose();
     this.cameraController?.dispose();
     this.player?.dispose();

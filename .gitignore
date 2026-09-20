@@ -6,3 +6,8 @@ dist/
 .env.*
 *.log
 .DS_Store
+
+# dev-only UI audit harnesses (not shipped)
+ui-harness*.html
+ui-harness*.js
+ui-probe*
